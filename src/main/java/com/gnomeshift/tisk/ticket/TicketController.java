@@ -41,7 +41,7 @@ public class TicketController {
         }
     }
 
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
     public ResponseEntity<TicketDTO> updateTicket(@PathVariable UUID id, @Valid @RequestBody TicketDTO ticketDTO) {
         try {
             return ResponseEntity.ok(ticketService.updateTicket(id, ticketDTO));
