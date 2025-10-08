@@ -20,5 +20,5 @@ public class CreateTicketDTO {
 
     @NotNull(message = "Status can't be null")
     @Enumerated(EnumType.STRING)
-    private TicketStatus status;
+    private TicketStatus status = TicketStatus.OPEN;
 }
