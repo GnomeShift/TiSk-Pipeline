@@ -84,7 +84,7 @@ const TicketForm: React.FC = () => {
         });
     };
 
-    if (loading && isEdit) return <div className="loading">Загрузка...</div>;
+    if (loading && isEdit) return <div className="loading"/>;
 
     return (
         <div className="ticket-form">
