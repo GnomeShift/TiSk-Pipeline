@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {Ticket} from '../types/ticket';
 import { ticketService } from '../services/ticketService';
+import {getPriorityColor, getStatusColor} from "../services/utils.ts";
 
 const TicketDetail: React.FC = () => {
     const { id } = useParams();
@@ -77,12 +78,12 @@ const TicketDetail: React.FC = () => {
                         <h4>Информация</h4>
                         <dl>
                             <dt>Статус:</dt>
-                            <dd className={`status status-${ticket.status}`}>
+                            <dd className={`status ${getStatusColor(ticket.status)}`}>
                                 {ticket.status}
                             </dd>
 
                             <dt>Приоритет:</dt>
-                            <dd className={`priority priority-${ticket.priority}`}>
+                            <dd className={`priority ${getPriorityColor(ticket.priority)}`}>
                                 {ticket.priority}
                             </dd>
 

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Ticket } from '../types/ticket';
 import { ticketService } from '../services/ticketService';
+import {getPriorityColor, getStatusColor} from "../services/utils.ts";
 
 const TicketList: React.FC = () => {
     const [tickets, setTickets] = useState<Ticket[]>([]);
