@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import {Ticket, TicketStatus} from '../types/ticket';
+import {Ticket} from '../types/ticket';
 import { ticketService } from '../services/ticketService';
+import {getPriorityColor, getStatusColor} from "../services/utils.ts";
 
 const TicketDetail: React.FC = () => {
     const { id } = useParams();
@@ -28,18 +29,6 @@ const TicketDetail: React.FC = () => {
         }
         finally {
             setLoading(false);
-        }
-    };
-
-    const handleStatusChange = async (newStatus: TicketStatus) => {
-        if (!ticket) return;
-
-        try {
-            await ticketService.update(ticket.id, { status: newStatus });
-            await loadTicket(ticket.id);
-        }
-        catch (err) {
-            alert('Ошибка при обновлении статуса');
         }
     };
 
@@ -89,20 +78,12 @@ const TicketDetail: React.FC = () => {
                         <h4>Информация</h4>
                         <dl>
                             <dt>Статус:</dt>
-                            <dd>
-                                <select
-                                    value={ticket.status}
-                                    onChange={(e) => handleStatusChange(e.target.value as any)}
-                                    className="status-select"
-                                >
-                                    <option value={TicketStatus.OPEN}>Открыт</option>
-                                    <option value={TicketStatus.IN_PROGRESS}>В работе</option>
-                                    <option value={TicketStatus.CLOSED}>Закрыт</option>
-                                </select>
+                            <dd className={`status ${getStatusColor(ticket.status)}`}>
+                                {ticket.status}
                             </dd>
 
                             <dt>Приоритет:</dt>
-                            <dd className={`priority priority-${ticket.priority}`}>
+                            <dd className={`priority ${getPriorityColor(ticket.priority)}`}>
                                 {ticket.priority}
                             </dd>
 

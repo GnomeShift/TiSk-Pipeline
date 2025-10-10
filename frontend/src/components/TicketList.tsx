@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Ticket } from '../types/ticket';
 import { ticketService } from '../services/ticketService';
+import {getPriorityColor, getStatusColor} from "../services/utils.ts";
 
 const TicketList: React.FC = () => {
     const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -33,24 +34,6 @@ const TicketList: React.FC = () => {
             } catch (err) {
                 alert('Ошибка при удалении тикета');
             }
-        }
-    };
-
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'open': return 'status-open';
-            case 'in_progress': return 'status-progress';
-            case 'closed': return 'status-closed';
-            default: return '';
-        }
-    };
-
-    const getPriorityColor = (priority: string) => {
-        switch (priority) {
-            case 'high': return 'priority-high';
-            case 'medium': return 'priority-medium';
-            case 'low': return 'priority-low';
-            default: return '';
         }
     };
 

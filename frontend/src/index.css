@@ -182,7 +182,7 @@ body {
   gap: 0.5rem;
 }
 
-.status {
+.status, .priority {
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   font-size: 0.85rem;
@@ -201,6 +201,21 @@ body {
 
 .status-closed {
   background-color: #6c757d;
+  color: white;
+}
+
+.priority-high {
+  background-color: #dc3545;
+  color: white;
+}
+
+.priority-medium {
+  background-color: #ffc107;
+  color: #333;
+}
+
+.priority-low {
+  background-color: #28a745;
   color: white;
 }
 
