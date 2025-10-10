@@ -9,6 +9,7 @@ export const getStatusColor = (status: string) => {
 
 export const getPriorityColor = (priority: string) => {
     switch (priority) {
+        case 'VERY_HIGH': return 'priority-very-high';
         case 'HIGH': return 'priority-high';
         case 'MEDIUM': return 'priority-medium';
         case 'LOW': return 'priority-low';

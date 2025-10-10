@@ -46,7 +46,7 @@ const TicketDetail: React.FC = () => {
         }
     };
 
-    if (loading) return <div className="loading">Загрузка...</div>;
+    if (loading) return <div className="loading"/>;
     if (error) return <div className="error">{error}</div>;
     if (!ticket) return <div className="error">Тикет не найден</div>;
 
