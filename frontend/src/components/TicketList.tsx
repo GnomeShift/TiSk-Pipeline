@@ -174,7 +174,7 @@ const TicketList: React.FC = () => {
                                 </div>
                                 <div className="ticket-footer">
                                     <span className="ticket-date">
-                                        {new Date(ticket.created_at).toLocaleDateString()}
+                                        {new Date(ticket.createdAt).toLocaleDateString()}
                                     </span>
                                     <div className="ticket-actions">
                                         <Link to={`/ticket/${ticket.id}`} className="btn btn-sm">

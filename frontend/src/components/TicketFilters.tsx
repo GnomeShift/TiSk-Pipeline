@@ -85,7 +85,7 @@ const TicketFilters: React.FC<TicketFiltersProps> = ({
                         className="filter-select"
                     >
                         <option value="created_at">Дате создания</option>
-                        <option value="updated_at">Дате обновления</option>
+                        <option value="updatedAt">Дате обновления</option>
                         <option value="priority">Приоритету</option>
                     </select>
                 </div>

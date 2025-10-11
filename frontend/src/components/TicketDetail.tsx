@@ -88,10 +88,10 @@ const TicketDetail: React.FC = () => {
                             </dd>
 
                             <dt>Создан:</dt>
-                            <dd>{new Date(ticket.created_at).toLocaleString()}</dd>
+                            <dd>{new Date(ticket.createdAt).toLocaleString()}</dd>
 
                             <dt>Обновлен:</dt>
-                            <dd>{new Date(ticket.updated_at).toLocaleString()}</dd>
+                            <dd>{new Date(ticket.updatedAt).toLocaleString()}</dd>
                         </dl>
                     </div>
                 </div>

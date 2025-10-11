@@ -4,8 +4,8 @@ export interface Ticket {
     description: string;
     status: TicketStatus;
     priority: TicketPriority;
-    created_at: string;
-    updated_at: string;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export enum TicketStatus {
