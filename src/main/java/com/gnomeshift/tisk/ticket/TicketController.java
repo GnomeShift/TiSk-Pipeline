@@ -1,6 +1,5 @@
 package com.gnomeshift.tisk.ticket;
 
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -23,42 +22,22 @@ public class TicketController {
 
     @GetMapping("/{id}")
     public ResponseEntity<TicketDTO> getTicketById(@PathVariable UUID id) {
-        try {
-            return ResponseEntity.ok(ticketService.getTicketById(id));
-        }
-        catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(ticketService.getTicketById(id));
     }
 
     @PostMapping
     public ResponseEntity<TicketDTO> createTicket(@Valid @RequestBody CreateTicketDTO createTicketDTO) {
-        try {
-            return ResponseEntity.status(HttpStatus.CREATED).body(ticketService.createTicket(createTicketDTO));
-        }
-        catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(ticketService.createTicket(createTicketDTO));
     }
 
     @PatchMapping("/{id}")
     public ResponseEntity<TicketDTO> updateTicket(@PathVariable UUID id, @Valid @RequestBody TicketDTO ticketDTO) {
-        try {
-            return ResponseEntity.ok(ticketService.updateTicket(id, ticketDTO));
-        }
-        catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(ticketService.updateTicket(id, ticketDTO));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTicket(@PathVariable UUID id) {
-        try {
-            ticketService.deleteTicket(id);
-            return ResponseEntity.noContent().build();
-        }
-        catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+        ticketService.deleteTicket(id);
+        return ResponseEntity.noContent().build();
     }
 }
