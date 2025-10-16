@@ -7,7 +7,7 @@ const Layout: React.FC = () => {
             <header className="header">
                 <div className="container">
                     <h1 className="logo">
-                        <Link to="/">TiSk - Ticket Desk</Link>
+                        <Link to="/">{import.meta.env.VITE_APP_TITLE}</Link>
                     </h1>
                     <nav className="nav">
                         <Link to="/" className="nav-link">Все тикеты</Link>

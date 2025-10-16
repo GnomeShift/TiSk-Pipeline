@@ -7,7 +7,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class TiSkApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(TiSkApplication.class, args);
+        SpringApplication app = new SpringApplication(TiSkApplication.class);
+        app.addInitializers(new DotenvPropertyInitializer());
+        app.run(args);
     }
 
 }
