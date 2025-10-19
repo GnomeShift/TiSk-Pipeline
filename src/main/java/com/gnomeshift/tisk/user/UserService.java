@@ -48,16 +48,16 @@ public class UserService {
             throw new ValidationException("Email already exists");
         }
 
-        if (createUserDTO.getUsername() != null &&
-                userRepository.existsByUsername(createUserDTO.getUsername())) {
+        if (createUserDTO.getLogin() != null &&
+                userRepository.existsByLogin(createUserDTO.getLogin())) {
             throw new ValidationException("Username already exists");
         }
 
         User user = userMapper.toEntity(createUserDTO);
         user.setPassword(passwordEncoder.encode(createUserDTO.getPassword()));
 
-        if (user.getUsername() == null) {
-            user.setUsername(authService.generateUsername(createUserDTO.getFirstName(), createUserDTO.getLastName()));
+        if (user.getLogin() == null) {
+            user.setLogin(authService.generateLogin(createUserDTO.getFirstName(), createUserDTO.getLastName()));
         }
 
         User savedUser = userRepository.save(user);
@@ -77,8 +77,8 @@ public class UserService {
             throw new ValidationException("Email already exists");
         }
 
-        if (updateUserDTO.getUsername() != null && !updateUserDTO.getUsername().equals(user.getUsername()) &&
-                userRepository.existsByUsername(updateUserDTO.getUsername())) {
+        if (updateUserDTO.getLogin() != null && !updateUserDTO.getLogin().equals(user.getLogin()) &&
+                userRepository.existsByLogin(updateUserDTO.getLogin())) {
             throw new ValidationException("Username already exists");
         }
 

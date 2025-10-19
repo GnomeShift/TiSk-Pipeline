@@ -33,8 +33,7 @@ public class AuthService {
             throw new ValidationException("Email already registered");
         }
 
-        if (registerDTO.getUsername() != null &&
-                userRepository.existsByUsername(registerDTO.getUsername())) {
+        if (registerDTO.getLogin() != null && userRepository.existsByLogin(registerDTO.getLogin())) {
             throw new ValidationException("Username already taken");
         }
 
@@ -43,9 +42,8 @@ public class AuthService {
                 .password(passwordEncoder.encode(registerDTO.getPassword()))
                 .firstName(registerDTO.getFirstName())
                 .lastName(registerDTO.getLastName())
-                .username(registerDTO.getUsername() != null ?
-                        registerDTO.getUsername() :
-                        generateUsername(registerDTO.getFirstName(), registerDTO.getLastName()))
+                .login(registerDTO.getLogin() != null ?
+                        registerDTO.getLogin() : generateLogin(registerDTO.getFirstName(), registerDTO.getLastName()))
                 .phoneNumber(registerDTO.getPhoneNumber())
                 .department(registerDTO.getDepartment())
                 .position(registerDTO.getPosition())
@@ -108,7 +106,7 @@ public class AuthService {
 
     public AuthResponseDTO refreshToken(RefreshTokenDTO refreshTokenDTO) {
         log.info("Refreshing access token...");
-        String userEmail = jwtService.extractUsername(refreshTokenDTO.getRefreshToken());
+        String userEmail = jwtService.extractEmail(refreshTokenDTO.getRefreshToken());
 
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
@@ -148,15 +146,15 @@ public class AuthService {
         log.info("Password changed successfully for user: {}", user.getId());
     }
 
-    public String generateUsername(String firstName, String lastName) {
+    public String generateLogin(String firstName, String lastName) {
         String base = (firstName.charAt(0) + lastName).toLowerCase().replaceAll("[^a-z0-9]", "");
-        String username = base;
+        String login = base;
         int counter = 1;
 
-        while (userRepository.existsByUsername(username)) {
-            username = base + counter;
+        while (userRepository.existsByLogin(login)) {
+            login = base + counter;
             counter++;
         }
-        return username;
+        return login;
     }
 }

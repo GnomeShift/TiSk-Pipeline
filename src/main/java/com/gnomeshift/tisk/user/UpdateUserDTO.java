@@ -23,9 +23,9 @@ public class UpdateUserDTO {
     @Size(min = 2, max = 100, message = "Last name must be between 2 and 100 characters")
     private String lastName;
 
-    @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
-    @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "Username can only contain letters, numbers and underscores")
-    private String username;
+    @Size(min = 3, max = 50, message = "Login must be between 3 and 50 characters")
+    @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "Login can only contain letters, numbers and underscores")
+    private String login;
 
     @Pattern(regexp = "^\\+?[1-9]\\d{1,10}$", message = "Invalid phone number format")
     private String phoneNumber;

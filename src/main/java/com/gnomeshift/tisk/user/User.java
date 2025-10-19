@@ -50,7 +50,7 @@ public class User implements UserDetails {
 
     @Column(unique = true)
     @Size(min = 3, max = 50)
-    private String username;
+    private String login;
 
     @NotNull
     @Enumerated(EnumType.STRING)
