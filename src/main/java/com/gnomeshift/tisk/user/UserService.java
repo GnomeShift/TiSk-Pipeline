@@ -5,12 +5,11 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -24,9 +23,8 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
-    public Page<UserDTO> getAllUsers(Pageable pageable, String search, UserRole role, UserStatus status) {
-        Page<User> users = userRepository.findUsersWithFilters(search, role, status, pageable);
-        return users.map(userMapper::toDto);
+    public List<UserDTO> getAllUsers() {
+        return userMapper.toDtoList(userRepository.findAll());
     }
 
     @Transactional(readOnly = true)

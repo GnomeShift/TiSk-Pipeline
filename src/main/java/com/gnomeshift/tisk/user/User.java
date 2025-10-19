@@ -1,6 +1,7 @@
 package com.gnomeshift.tisk.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.gnomeshift.tisk.ticket.Ticket;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
@@ -27,6 +28,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

@@ -3,10 +3,6 @@ package com.gnomeshift.tisk.ticket;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,6 +11,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -26,15 +23,8 @@ public class TicketController {
     private final TicketService ticketService;
 
     @GetMapping
-    public ResponseEntity<Page<TicketDTO>> getAllTickets(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "DESC") Sort.Direction direction,
-            @ModelAttribute TicketFilterDTO filter) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
-        Page<TicketDTO> tickets = ticketService.getAllTickets(pageable, filter);
-        return ResponseEntity.ok(tickets);
+    public ResponseEntity<List<TicketDTO>> getAllTickets() {
+        return ResponseEntity.ok(ticketService.getAllTickets());
     }
 
     @GetMapping("/{id}")
@@ -43,15 +33,8 @@ public class TicketController {
     }
 
     @GetMapping("/my")
-    public ResponseEntity<Page<TicketDTO>> getMyTickets(
-            Authentication authentication,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "DESC") Sort.Direction direction) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
-        Page<TicketDTO> tickets = ticketService.getMyTickets(authentication.getName(), pageable);
-        return ResponseEntity.ok(tickets);
+    public ResponseEntity<List<TicketDTO>> getMyTickets(Authentication authentication) {
+        return ResponseEntity.ok(ticketService.getMyTickets(authentication.getName()));
     }
 
     @PostMapping

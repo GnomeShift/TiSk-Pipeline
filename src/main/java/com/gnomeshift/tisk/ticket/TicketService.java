@@ -5,12 +5,10 @@ import com.gnomeshift.tisk.user.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -23,18 +21,8 @@ public class TicketService {
     private final TicketMapper ticketMapper;
 
     @Transactional(readOnly = true)
-    public Page<TicketDTO> getAllTickets(Pageable pageable, TicketFilterDTO filter) {
-        LocalDateTime createdAt = filter.getCreatedAt() != null ? filter.getCreatedAt().atStartOfDay() : null;
-        Page<Ticket> tickets = ticketRepository.findWithFilters(
-                filter.getSearch(),
-                filter.getStatus(),
-                filter.getPriority(),
-                filter.getReporterId(),
-                filter.getAssigneeId(),
-                createdAt,
-                pageable
-        );
-        return tickets.map(ticketMapper::toDto);
+    public List<TicketDTO> getAllTickets() {
+        return ticketMapper.toDtoList(ticketRepository.findAll());
     }
 
     @Transactional(readOnly = true)
@@ -45,12 +33,10 @@ public class TicketService {
     }
 
     @Transactional(readOnly = true)
-    public Page<TicketDTO> getMyTickets(String email, Pageable pageable) {
+    public List<TicketDTO> getMyTickets(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new EntityNotFoundException("User with email '" + email + "' not found"));
-
-        Page<Ticket> tickets = ticketRepository.findByReporter(user, pageable);
-        return tickets.map(ticketMapper::toDto);
+        return ticketMapper.toDtoList(ticketRepository.findAllByReporter(user));
     }
 
     @Transactional
