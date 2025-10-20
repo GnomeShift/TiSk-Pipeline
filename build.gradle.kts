@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.gnomeshift"
-version = "1.3.5"
+version = "1.5.1"
 description = "TiSk-backend"
 
 java {
