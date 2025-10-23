@@ -33,6 +33,11 @@ const Layout: React.FC = () => {
                                         <Link to="/profile" className="user-menu-item">
                                             Профиль
                                         </Link>
+                                        {user?.role === 'ADMIN' && (
+                                            <Link to="/users" className="user-menu-item">
+                                                Управление пользователями
+                                            </Link>
+                                        )}
                                         <button onClick={handleLogout} className="user-menu-item">
                                             Выйти
                                         </button>
