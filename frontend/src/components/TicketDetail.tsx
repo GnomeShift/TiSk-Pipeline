@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {TicketDTO, TicketStatus} from '../types/ticket';
 import { ticketService } from '../services/ticketService';
-import {getPriorityColor, getStatusColor} from "../services/utils.ts";
+import {getPriorityColor, getStatusColor, getStatusLabel} from '../services/utils';
 import { useAuth } from '../contexts/AuthContext';
 import { userService } from '../services/userService';
 import { UserDTO } from '../types/user';
@@ -151,9 +151,9 @@ const TicketDetail: React.FC = () => {
                                         onChange={(e) => handleStatusChange(e.target.value as TicketStatus)}
                                         className="status-select"
                                     >
-                                        <option value={TicketStatus.OPEN}>Открыт</option>
-                                        <option value={TicketStatus.IN_PROGRESS}>В работе</option>
-                                        <option value={TicketStatus.CLOSED}>Закрыт</option>
+                                        <option value={TicketStatus.OPEN}>{getStatusLabel(TicketStatus.OPEN)}</option>
+                                        <option value={TicketStatus.IN_PROGRESS}>{getStatusLabel(TicketStatus.IN_PROGRESS)}</option>
+                                        <option value={TicketStatus.CLOSED}>{getStatusLabel(TicketStatus.CLOSED)}</option>
                                     </select>
                                 ) : (
                                     <span className={`status ${getStatusColor(ticket.status)}`}>

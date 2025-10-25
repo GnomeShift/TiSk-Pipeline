@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { TicketDTO } from '../types/ticket';
 import { ticketService } from '../services/ticketService';
-import { getPriorityColor, getStatusColor } from "../services/utils";
+import { getPriorityColor, getPriorityLabel, getStatusColor, getStatusLabel } from "../services/utils";
 import Pagination from './Pagination';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -103,10 +103,10 @@ const MyTickets: React.FC = () => {
                                     </Link>
                                     <div className="ticket-item-badges">
                                         <span className={`status ${getStatusColor(ticket.status)}`}>
-                                            {ticket.status}
+                                            {getStatusLabel(ticket.status)}
                                         </span>
                                         <span className={`priority ${getPriorityColor(ticket.priority)}`}>
-                                            {ticket.priority}
+                                            {getPriorityLabel(ticket.priority)}
                                         </span>
                                     </div>
                                 </div>

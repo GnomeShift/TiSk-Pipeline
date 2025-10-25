@@ -3,7 +3,7 @@ import { UserDTO, UserRole, UserStatus, CreateUserDTO, UpdateUserDTO } from '../
 import { userService } from '../services/userService';
 import { useAuth } from '../contexts/AuthContext';
 import Pagination from './Pagination';
-import { getRoleLabel } from '../services/utils'
+import { getRoleLabel, getUserStatusLabel } from '../services/utils'
 
 const UserManagement: React.FC = () => {
     const { user: currentUser } = useAuth();
@@ -239,9 +239,9 @@ const UserManagement: React.FC = () => {
                         className="filter-select"
                     >
                         <option value="ALL">Все статусы</option>
-                        <option value={UserStatus.ACTIVE}>Активен</option>
-                        <option value={UserStatus.INACTIVE}>Неактивен</option>
-                        <option value={UserStatus.SUSPENDED}>Заблокирован</option>
+                        <option value={UserStatus.ACTIVE}>{getUserStatusLabel(UserStatus.ACTIVE)}</option>
+                        <option value={UserStatus.INACTIVE}>{getUserStatusLabel(UserStatus.INACTIVE)}</option>
+                        <option value={UserStatus.SUSPENDED}>{getUserStatusLabel(UserStatus.SUSPENDED)}</option>
                     </select>
                 </div>
                 <div className="filter-stats">
@@ -518,9 +518,9 @@ const UserManagement: React.FC = () => {
                                     className="form-control"
                                     disabled={editingUser.id === currentUser?.id}
                                 >
-                                    <option value={UserStatus.ACTIVE}>Активен</option>
-                                    <option value={UserStatus.INACTIVE}>Неактивен</option>
-                                    <option value={UserStatus.SUSPENDED}>Заблокирован</option>
+                                    <option value={UserStatus.ACTIVE}>{getUserStatusLabel(UserStatus.ACTIVE)}</option>
+                                    <option value={UserStatus.INACTIVE}>{getUserStatusLabel(UserStatus.INACTIVE)}</option>
+                                    <option value={UserStatus.SUSPENDED}>{getUserStatusLabel(UserStatus.SUSPENDED)}</option>
                                 </select>
                             </div>
 
@@ -581,7 +581,7 @@ const UserManagement: React.FC = () => {
                                 </td>
                                 <td>
                                         <span className={`status-badge status-${user.status.toLowerCase()}`}>
-                                            {user.status}
+                                            {getUserStatusLabel(user.status)}
                                         </span>
                                 </td>
                                 <td>
