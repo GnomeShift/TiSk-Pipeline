@@ -8,7 +8,9 @@ import MyTickets from './components/MyTickets';
 import Login from './components/Login';
 import Register from './components/Register';
 import Profile from './components/Profile';
+import UserManagement from './components/UserManagement';
 import PrivateRoute from './components/PrivateRoute';
+import { UserRole } from './types/user';
 
 function App() {
     return (
@@ -47,6 +49,12 @@ function App() {
                         <Route path="profile" element={
                             <PrivateRoute>
                                 <Profile />
+                            </PrivateRoute>
+                        } />
+
+                        <Route path="users" element={
+                            <PrivateRoute requiredRole={UserRole.ADMIN}>
+                                <UserManagement />
                             </PrivateRoute>
                         } />
                     </Route>

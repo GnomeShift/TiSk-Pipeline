@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { userService } from '../services/userService';
 import { ChangePasswordDTO } from '../types/auth';
 import { UpdateUserDTO } from '../types/user';
+import { getUserStatusLabel, getRoleLabel } from '../services/utils';
 
 const Profile: React.FC = () => {
     const { user, updateUser, changePassword } = useAuth();
@@ -132,10 +133,18 @@ const Profile: React.FC = () => {
                                 <dd>{user.position || '—'}</dd>
 
                                 <dt>Роль:</dt>
-                                <dd>{user.role}</dd>
+                                <dd>
+                                    <span className={`role-badge role-${user.role.toLowerCase()}`}>
+                                        {getRoleLabel(user.role)}
+                                    </span>
+                                </dd>
 
                                 <dt>Статус:</dt>
-                                <dd>{user.status}</dd>
+                                <dd>
+                                    <span className={`status-badge status-${user.status.toLowerCase()}`}>
+                                        {getUserStatusLabel(user.status)}
+                                    </span>
+                                </dd>
 
                                 <dt>Зарегистрирован:</dt>
                                 <dd>{new Date(user.createdAt).toLocaleDateString()}</dd>

@@ -1,22 +1,19 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { TicketDTO } from '../types/ticket';
 import { ticketService } from '../services/ticketService';
-import { getPriorityColor, getStatusColor } from '../services/utils';
+import { getPriorityColor, getStatusColor, getStatusLabel, getPriorityLabel } from '../services/utils';
 import TicketFilters from './TicketFilters';
 import Pagination from './Pagination';
 import { useAuth } from '../contexts/AuthContext';
-import { PaginationParams } from '../types/pagination';
 
 const TicketList: React.FC = () => {
     const { user } = useAuth();
-    const [tickets, setTickets] = useState<TicketDTO[]>([]);
+    const [allTickets, setAllTickets] = useState<TicketDTO[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
-    const [totalItems, setTotalItems] = useState(0);
     const [itemsPerPage] = useState(9);
 
     const [search, setSearch] = useState('');
@@ -25,37 +22,78 @@ const TicketList: React.FC = () => {
     const [sortBy, setSortBy] = useState<'createdAt' | 'updatedAt' | 'priority'>('createdAt');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-    const [searchTimer, setSearchTimer] = useState<number | null>(null);
+    useEffect(() => {
+        loadTickets();
+    }, []);
 
-    const loadTickets = useCallback(async () => {
+    const loadTickets = async () => {
         try {
             setLoading(true);
-
-            const params: PaginationParams = {
-                page: currentPage,
-                limit: itemsPerPage,
-                search: search || undefined,
-                status: status !== 'ALL' ? status : undefined,
-                priority: priority !== 'ALL' ? priority : undefined,
-                sortBy,
-                sortOrder
-            };
-
-            const response = await ticketService.getAll(params);
-            setTickets(response.data);
-            setTotalPages(response.totalPages);
-            setTotalItems(response.total);
+            const data = await ticketService.getAll();
+            setAllTickets(data);
         } catch (err) {
             setError('Ошибка загрузки тикетов');
             console.error(err);
         } finally {
             setLoading(false);
         }
-    }, [currentPage, itemsPerPage, search, status, priority, sortBy, sortOrder]);
+    };
+
+    const filteredAndSortedTickets = useMemo(() => {
+        let filtered = [...allTickets];
+
+        if (search) {
+            const searchLower = search.toLowerCase();
+            filtered = filtered.filter(ticket =>
+                ticket.title.toLowerCase().includes(searchLower) ||
+                ticket.description.toLowerCase().includes(searchLower) ||
+                ticket.id.toLowerCase().includes(searchLower)
+            );
+        }
+
+        if (status !== 'ALL') {
+            filtered = filtered.filter(ticket => ticket.status === status);
+        }
+
+        if (priority !== 'ALL') {
+            filtered = filtered.filter(ticket => ticket.priority === priority);
+        }
+
+        filtered.sort((a, b) => {
+            let aVal: any = a[sortBy as keyof TicketDTO];
+            let bVal: any = b[sortBy as keyof TicketDTO];
+
+            if (sortBy === 'priority') {
+                const priorityOrder = { 'VERY_HIGH': 4, 'HIGH': 3, 'MEDIUM': 2, 'LOW': 1 };
+                aVal = priorityOrder[aVal as keyof typeof priorityOrder] || 0;
+                bVal = priorityOrder[bVal as keyof typeof priorityOrder] || 0;
+            }
+
+            if (sortBy === 'createdAt' || sortBy === 'updatedAt') {
+                aVal = new Date(aVal).getTime();
+                bVal = new Date(bVal).getTime();
+            }
+
+            if (sortOrder === 'desc') {
+                return bVal > aVal ? 1 : -1;
+            }
+            return aVal > bVal ? 1 : -1;
+        });
+
+        return filtered;
+    }, [allTickets, search, status, priority, sortBy, sortOrder]);
+
+    const paginatedTickets = useMemo(() => {
+        const start = (currentPage - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+        return filteredAndSortedTickets.slice(start, end);
+    }, [currentPage, filteredAndSortedTickets, itemsPerPage]);
+
+    const totalPages = Math.ceil(filteredAndSortedTickets.length / itemsPerPage);
 
     useEffect(() => {
-        loadTickets();
-    }, [loadTickets]);
+        setCurrentPage(1);
+    }, [search, status, priority, sortBy, sortOrder]);
 
     const handleDelete = async (id: string) => {
         if (window.confirm('Удалить этот тикет?')) {
@@ -69,27 +107,7 @@ const TicketList: React.FC = () => {
     };
 
     const handleSearchChange = (value: string) => {
-        if (searchTimer) {
-            clearTimeout(searchTimer);
-        }
-
-        const timer = setTimeout(() => {
-            setSearch(value);
-            setCurrentPage(1);
-        }, 500);
-
-        setSearchTimer(timer);
         setSearch(value);
-    };
-
-    const handleStatusChange = (value: string) => {
-        setStatus(value);
-        setCurrentPage(1);
-    };
-
-    const handlePriorityChange = (value: string) => {
-        setPriority(value);
-        setCurrentPage(1);
     };
 
     const handleSortByChange = (value: string) => {
@@ -130,7 +148,7 @@ const TicketList: React.FC = () => {
             <div className="list-header">
                 <h2>Список тикетов</h2>
                 <div className="list-stats">
-                    Всего тикетов: <strong>{totalItems}</strong>
+                    Найдено: <strong>{filteredAndSortedTickets.length}</strong> из <strong>{allTickets.length}</strong>
                 </div>
             </div>
 
@@ -141,18 +159,14 @@ const TicketList: React.FC = () => {
                 sortBy={sortBy}
                 sortOrder={sortOrder}
                 onSearchChange={handleSearchChange}
-                onStatusChange={handleStatusChange}
-                onPriorityChange={handlePriorityChange}
+                onStatusChange={setStatus}
+                onPriorityChange={setPriority}
                 onSortByChange={handleSortByChange}
                 onSortOrderChange={handleSortOrderChange}
                 onReset={handleResetFilters}
             />
 
-            {loading ? (
-                <div className="loading"/>
-            ) : error ? (
-                <div className="error">{error}</div>
-            ) : tickets.length === 0 ? (
+            {paginatedTickets.length === 0 ? (
                 <div className="empty-state">
                     <p>
                         {search || status !== 'ALL' || priority !== 'ALL'
@@ -168,20 +182,20 @@ const TicketList: React.FC = () => {
             ) : (
                 <>
                     <div className="tickets-grid">
-                        {tickets.map((ticket) => (
+                        {paginatedTickets.map((ticket) => (
                             <div key={ticket.id} className="ticket-card">
                                 <div className="ticket-header">
                                     <h3 className="ticket-title">
                                         <Link to={`/ticket/${ticket.id}`}>{ticket.title}</Link>
                                     </h3>
                                     <span className={`priority ${getPriorityColor(ticket.priority)}`}>
-                                        {ticket.priority}
+                                        {getPriorityLabel(ticket.priority)}
                                     </span>
                                 </div>
                                 <p className="ticket-description">{ticket.description}</p>
                                 <div className="ticket-meta">
                                     <span className={`status ${getStatusColor(ticket.status)}`}>
-                                        {ticket.status}
+                                        {getStatusLabel(ticket.status)}
                                     </span>
                                     <span className="ticket-id">#{ticket.id.substring(0, 8)}</span>
                                 </div>
@@ -228,13 +242,15 @@ const TicketList: React.FC = () => {
                         ))}
                     </div>
 
-                    <Pagination
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        onPageChange={handlePageChange}
-                        totalItems={totalItems}
-                        itemsPerPage={itemsPerPage}
-                    />
+                    {totalPages > 1 && (
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                            totalItems={filteredAndSortedTickets.length}
+                            itemsPerPage={itemsPerPage}
+                        />
+                    )}
                 </>
             )}
         </div>

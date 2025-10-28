@@ -3,6 +3,7 @@ import {useNavigate, useParams} from 'react-router-dom';
 import {CreateTicketDTO, TicketPriority, TicketStatus, UpdateTicketDTO} from '../types/ticket';
 import {ticketService} from '../services/ticketService';
 import {useAuth} from "../contexts/AuthContext.tsx";
+import {getPriorityLabel, getStatusLabel} from "../services/utils";
 
 const TicketForm: React.FC = () => {
     const navigate = useNavigate();
@@ -136,10 +137,10 @@ const TicketForm: React.FC = () => {
                             onChange={handleChange}
                             className="form-control"
                         >
-                            <option value={TicketPriority.LOW}>Низкий</option>
-                            <option value={TicketPriority.MEDIUM}>Средний</option>
-                            <option value={TicketPriority.HIGH}>Высокий</option>
-                            <option value={TicketPriority.VERY_HIGH}>Очень высокий</option>
+                            <option value={TicketPriority.LOW}>{getPriorityLabel(TicketPriority.LOW)}</option>
+                            <option value={TicketPriority.MEDIUM}>{getPriorityLabel(TicketPriority.MEDIUM)}</option>
+                            <option value={TicketPriority.HIGH}>{getPriorityLabel(TicketPriority.HIGH)}</option>
+                            <option value={TicketPriority.VERY_HIGH}>{getPriorityLabel(TicketPriority.VERY_HIGH)}</option>
                         </select>
                     </div>
 
@@ -153,9 +154,9 @@ const TicketForm: React.FC = () => {
                                 onChange={handleChange}
                                 className="form-control"
                             >
-                                <option value={TicketStatus.OPEN}>Открыт</option>
-                                <option value={TicketStatus.IN_PROGRESS}>В работе</option>
-                                <option value={TicketStatus.CLOSED}>Закрыт</option>
+                                <option value={TicketStatus.OPEN}>{getStatusLabel(TicketStatus.OPEN)}</option>
+                                <option value={TicketStatus.IN_PROGRESS}>{getStatusLabel(TicketStatus.IN_PROGRESS)}</option>
+                                <option value={TicketStatus.CLOSED}>{getStatusLabel(TicketStatus.CLOSED)}</option>
                             </select>
                         </div>
                     )}
