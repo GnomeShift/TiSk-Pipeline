@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { RegisterDTO } from '../types/auth';
+import { validatePassword } from '../services/utils'
 
 const Register: React.FC = () => {
     const navigate = useNavigate();
@@ -26,11 +27,6 @@ const Register: React.FC = () => {
             ...formData,
             [e.target.name]: e.target.value
         });
-    };
-
-    const validatePassword = (password: string): boolean => {
-        const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
-        return regex.test(password);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -85,7 +81,11 @@ const Register: React.FC = () => {
                                 className="form-control"
                                 minLength={2}
                                 maxLength={100}
+                                placeholder="Иван"
                             />
+                            <small className="form-hint">
+                                Минимум 2, максимум 100 символов
+                            </small>
                         </div>
 
                         <div className="form-group">
@@ -100,7 +100,11 @@ const Register: React.FC = () => {
                                 className="form-control"
                                 minLength={2}
                                 maxLength={100}
+                                placeholder="Иванов"
                             />
+                            <small className="form-hint">
+                                Минимум 2, максимум 100 символов
+                            </small>
                         </div>
                     </div>
 
@@ -119,20 +123,23 @@ const Register: React.FC = () => {
                     </div>
 
                     <div className="form-group">
-                        <label htmlFor="login">Логин</label>
+                        <label htmlFor="login">Логин *</label>
                         <input
                             type="text"
                             id="login"
                             name="login"
                             value={formData.login}
                             onChange={handleChange}
+                            required
                             className="form-control"
                             pattern="^[a-zA-Z0-9_]+$"
                             minLength={3}
                             maxLength={50}
                             placeholder="user_login"
                         />
-                        <small className="form-hint">Только буквы, цифры и подчеркивания</small>
+                        <small className="form-hint">
+                            Минимум 3, максимум 50 символов, только буквы, цифры и подчеркивания
+                        </small>
                     </div>
 
                     <div className="form-row">
@@ -147,6 +154,7 @@ const Register: React.FC = () => {
                                 required
                                 className="form-control"
                                 minLength={8}
+                                placeholder="••••••••"
                             />
                             <small className="form-hint">
                                 Минимум 8 символов, заглавные и строчные буквы, цифры
@@ -163,6 +171,7 @@ const Register: React.FC = () => {
                                 onChange={handleChange}
                                 required
                                 className="form-control"
+                                placeholder="••••••••"
                             />
                         </div>
                     </div>

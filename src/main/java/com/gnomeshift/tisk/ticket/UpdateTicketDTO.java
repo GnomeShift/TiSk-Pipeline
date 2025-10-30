@@ -19,7 +19,8 @@ public class UpdateTicketDTO {
     @Size(min = 1, max = 255, message = "Title must be between 1 and 255 characters")
     private String title;
 
-    @Size(min = 1, max = 5000, message = "Description can't exceed 5000 characters")
+    @NotBlank(message = "Description required")
+    @Size(min = 1, max = 5000, message = "Description must be between 1 and 5000 characters")
     private String description;
 
     @NotNull(message = "Status required")

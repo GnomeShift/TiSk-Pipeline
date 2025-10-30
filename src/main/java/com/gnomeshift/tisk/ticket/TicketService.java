@@ -28,14 +28,14 @@ public class TicketService {
     @Transactional(readOnly = true)
     public TicketDTO getTicketById(UUID id) {
         Ticket ticket = ticketRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Ticket with id '" + id + "' not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Ticket not found with id " + id));
         return ticketMapper.toDto(ticket);
     }
 
     @Transactional(readOnly = true)
     public List<TicketDTO> getMyTickets(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException("User with email '" + email + "' not found"));
+                .orElseThrow(() -> new EntityNotFoundException("User not found with email: " + email));
         return ticketMapper.toDtoList(ticketRepository.findAllByReporter(user));
     }
 
@@ -44,10 +44,11 @@ public class TicketService {
         log.info("Creating new ticket with title: {}", createTicketDTO.getTitle());
 
         User reporter = userRepository.findById(createTicketDTO.getReporterId())
-                .orElseThrow(() -> new EntityNotFoundException("User with id '" + createTicketDTO.getReporterId() + "' not found"));
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + createTicketDTO.getReporterId()));
 
         Ticket ticket = ticketMapper.toEntity(createTicketDTO);
         ticket.setReporter(reporter);
+        log.info("Ticket created successfully with id: {}", ticket);
         return ticketMapper.toDto(ticketRepository.save(ticket));
     }
 
@@ -56,13 +57,13 @@ public class TicketService {
         log.info("Updating ticket with id: {}", id);
 
         Ticket ticket = ticketRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Ticket with id '" + id + "' not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Ticket not found with id: " + id));
 
         ticketMapper.updateTicketFromDto(updateTicketDTO, ticket);
 
         if (updateTicketDTO.getReporterId() != null) {
             User reporter = userRepository.findById(updateTicketDTO.getReporterId())
-                    .orElseThrow(() -> new EntityNotFoundException("User with id '" + id + "' not found"));
+                    .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
             ticket.setAssignee(reporter);
         }
 
@@ -76,10 +77,10 @@ public class TicketService {
         log.info("Assigning ticket {} to user {}", id, assigneeId);
 
         Ticket ticket = ticketRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Ticket with id '" + id + "' not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Ticket not found with id: " + id));
 
         User assignee = userRepository.findById(assigneeId)
-                .orElseThrow(() -> new EntityNotFoundException("User with id '" + id + "' not found"));
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
 
         ticket.setAssignee(assignee);
 
@@ -88,7 +89,7 @@ public class TicketService {
         }
 
         Ticket savedTicket = ticketRepository.save(ticket);
-        log.info("Ticket assigned successfully");
+        log.info("Ticket assigned successfully: {}", id);
         return ticketMapper.toDto(savedTicket);
     }
 
