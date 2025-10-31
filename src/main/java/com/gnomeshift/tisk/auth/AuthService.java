@@ -34,7 +34,7 @@ public class AuthService {
         }
 
         if (registerDTO.getLogin() != null && userRepository.existsByLogin(registerDTO.getLogin())) {
-            throw new ValidationException("Username already taken");
+            throw new ValidationException("Login already taken");
         }
 
         User user = User.builder()

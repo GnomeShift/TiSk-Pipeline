@@ -34,7 +34,7 @@ public class RegisterDTO {
     @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "Login can only contain letters, numbers and underscores")
     private String login;
 
-    @Pattern(regexp = "^\\+?[1-9]\\d{1,10}$", message = "Invalid phone number format")
+    @Pattern(regexp = "^$|^\\+?[1-9]\\d{0,10}$", message = "Invalid phone number format")
     private String phoneNumber;
 
     private String department;

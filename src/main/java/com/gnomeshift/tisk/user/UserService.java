@@ -50,7 +50,7 @@ public class UserService {
 
         if (createUserDTO.getLogin() != null &&
                 userRepository.existsByLogin(createUserDTO.getLogin())) {
-            throw new ValidationException("Username already exists");
+            throw new ValidationException("Login already exists");
         }
 
         User user = userMapper.toEntity(createUserDTO);
@@ -79,7 +79,7 @@ public class UserService {
 
         if (updateUserDTO.getLogin() != null && !updateUserDTO.getLogin().equals(user.getLogin()) &&
                 userRepository.existsByLogin(updateUserDTO.getLogin())) {
-            throw new ValidationException("Username already exists");
+            throw new ValidationException("Login already exists");
         }
 
         userMapper.updateUserFromDto(updateUserDTO, user);
@@ -108,6 +108,6 @@ public class UserService {
 
         user.setStatus(status);
         userRepository.save(user);
-        log.info("User status changed successfully");
+        log.info("User status changed successfully: {}", id);
     }
 }

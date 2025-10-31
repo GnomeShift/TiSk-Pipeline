@@ -3,7 +3,7 @@ import { UserDTO, UserRole, UserStatus, CreateUserDTO, UpdateUserDTO } from '../
 import { userService } from '../services/userService';
 import { useAuth } from '../contexts/AuthContext';
 import Pagination from './Pagination';
-import { getRoleLabel, getUserStatusLabel } from '../services/utils'
+import { getRoleLabel, getUserStatusLabel, validatePassword } from '../services/utils'
 
 const UserManagement: React.FC = () => {
     const { user: currentUser } = useAuth();
@@ -167,6 +167,12 @@ const UserManagement: React.FC = () => {
 
     const handleCreateUser = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!validatePassword(formData.password)) {
+            setError('Пароль должен содержать минимум 8 символов, включая заглавные и строчные буквы, а также цифры');
+            return;
+        }
+
         try {
             await userService.create(formData);
             await loadUsers();
@@ -226,7 +232,7 @@ const UserManagement: React.FC = () => {
             email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
-            login: user.login || '',
+            login: user.login,
             phoneNumber: user.phoneNumber || '',
             department: user.department || '',
             position: user.position || '',
@@ -358,7 +364,13 @@ const UserManagement: React.FC = () => {
                                         onChange={handleFormChange}
                                         required
                                         className="form-control"
+                                        minLength={2}
+                                        maxLength={100}
+                                        placeholder="Иванов"
                                     />
+                                    <small className="form-hint">
+                                        Минимум 2, максимум 100 символов
+                                    </small>
                                 </div>
                                 <div className="form-group">
                                     <label>Фамилия *</label>
@@ -369,7 +381,13 @@ const UserManagement: React.FC = () => {
                                         onChange={handleFormChange}
                                         required
                                         className="form-control"
+                                        minLength={2}
+                                        maxLength={100}
+                                        placeholder="Иван"
                                     />
+                                    <small className="form-hint">
+                                        Минимум 2, максимум 100 символов
+                                    </small>
                                 </div>
                             </div>
 
@@ -382,6 +400,7 @@ const UserManagement: React.FC = () => {
                                     onChange={handleFormChange}
                                     required
                                     className="form-control"
+                                    placeholder="user@example.com"
                                 />
                             </div>
 
@@ -393,9 +412,16 @@ const UserManagement: React.FC = () => {
                                         name="login"
                                         value={formData.login}
                                         onChange={handleFormChange}
+                                        required
                                         pattern="^[a-zA-Z0-9_]+$"
                                         className="form-control"
+                                        minLength={3}
+                                        maxLength={50}
+                                        placeholder="user_login"
                                     />
+                                    <small className="form-hint">
+                                        Минимум 3, максимум 50 символов, только буквы, цифры и подчеркивания
+                                    </small>
                                 </div>
                                 <div className="form-group">
                                     <label>Пароль *</label>
@@ -407,7 +433,11 @@ const UserManagement: React.FC = () => {
                                         required
                                         minLength={8}
                                         className="form-control"
+                                        placeholder="••••••••"
                                     />
+                                    <small className="form-hint">
+                                        Минимум 8 символов, заглавные и строчные буквы, цифры
+                                    </small>
                                 </div>
                             </div>
 
@@ -420,6 +450,8 @@ const UserManagement: React.FC = () => {
                                         value={formData.phoneNumber}
                                         onChange={handleFormChange}
                                         className="form-control"
+                                        pattern="^$|^\+?[1-9]\d{0,10}$"
+                                        placeholder="+7XXXXXXXXXX"
                                     />
                                 </div>
                                 <div className="form-group">
@@ -503,7 +535,13 @@ const UserManagement: React.FC = () => {
                                         onChange={handleEditFormChange}
                                         required
                                         className="form-control"
+                                        minLength={2}
+                                        maxLength={100}
+                                        placeholder="Иван"
                                     />
+                                    <small className="form-hint">
+                                        Минимум 2, максимум 100 символов
+                                    </small>
                                 </div>
                                 <div className="form-group">
                                     <label>Фамилия *</label>
@@ -514,7 +552,13 @@ const UserManagement: React.FC = () => {
                                         onChange={handleEditFormChange}
                                         required
                                         className="form-control"
+                                        minLength={2}
+                                        maxLength={100}
+                                        placeholder="Иванов"
                                     />
+                                    <small className="form-hint">
+                                        Минимум 2, максимум 100 символов
+                                    </small>
                                 </div>
                             </div>
 
@@ -527,6 +571,7 @@ const UserManagement: React.FC = () => {
                                     onChange={handleEditFormChange}
                                     required
                                     className="form-control"
+                                    placeholder="user@example.com"
                                 />
                             </div>
 
@@ -537,9 +582,16 @@ const UserManagement: React.FC = () => {
                                     name="login"
                                     value={editFormData.login}
                                     onChange={handleEditFormChange}
+                                    required
                                     pattern="^[a-zA-Z0-9_]+$"
                                     className="form-control"
+                                    minLength={3}
+                                    maxLength={50}
+                                    placeholder="user_login"
                                 />
+                                <small className="form-hint">
+                                    Минимум 3, максимум 50 символов, только буквы, цифры и подчеркивания
+                                </small>
                             </div>
 
                             <div className="form-row">
@@ -551,6 +603,8 @@ const UserManagement: React.FC = () => {
                                         value={editFormData.phoneNumber}
                                         onChange={handleEditFormChange}
                                         className="form-control"
+                                        pattern="^$|^\+?[1-9]\d{0,10}$"
+                                        placeholder="+7XXXXXXXXXX"
                                     />
                                 </div>
                                 <div className="form-group">

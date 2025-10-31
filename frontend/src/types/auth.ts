@@ -10,7 +10,7 @@ export interface RegisterDTO {
     password: string;
     firstName: string;
     lastName: string;
-    login?: string;
+    login: string;
     phoneNumber?: string;
     department?: string;
     position?: string;

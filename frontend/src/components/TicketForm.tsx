@@ -106,8 +106,12 @@ const TicketForm: React.FC = () => {
                         onChange={handleChange}
                         required
                         className="form-control"
+                        minLength={1}
                         maxLength={255}
                     />
+                    <small className="form-hint">
+                        Минимум 1, максимум 255 символов
+                    </small>
                 </div>
 
                 <div className="form-group">
@@ -120,10 +124,11 @@ const TicketForm: React.FC = () => {
                         required
                         rows={5}
                         className="form-control"
+                        minLength={1}
                         maxLength={5000}
                     />
                     <small className="form-hint">
-                        Максимум 5000 символов
+                        Минимум 1, максимум 5000 символов
                     </small>
                 </div>
 

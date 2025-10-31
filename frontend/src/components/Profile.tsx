@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { userService } from '../services/userService';
 import { ChangePasswordDTO } from '../types/auth';
 import { UpdateUserDTO } from '../types/user';
-import { getUserStatusLabel, getRoleLabel } from '../services/utils';
+import { getUserStatusLabel, getRoleLabel, validatePassword } from '../services/utils';
 
 const Profile: React.FC = () => {
     const { user, updateUser, changePassword } = useAuth();
@@ -39,11 +39,6 @@ const Profile: React.FC = () => {
             ...passwordData,
             [e.target.name]: e.target.value
         });
-    };
-
-    const validatePassword = (password: string): boolean => {
-        const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
-        return regex.test(password);
     };
 
     const handleProfileSubmit = async (e: React.FormEvent) => {
@@ -167,7 +162,7 @@ const Profile: React.FC = () => {
                     ) : (
                         <form onSubmit={handleProfileSubmit} className="profile-form">
                             <div className="form-group">
-                                <label htmlFor="firstName">Имя</label>
+                                <label htmlFor="firstName">Имя *</label>
                                 <input
                                     type="text"
                                     id="firstName"
@@ -178,11 +173,15 @@ const Profile: React.FC = () => {
                                     className="form-control"
                                     minLength={2}
                                     maxLength={100}
+                                    placeholder="Иван"
                                 />
+                                <small className="form-hint">
+                                    Минимум 2, максимум 100 символов
+                                </small>
                             </div>
 
                             <div className="form-group">
-                                <label htmlFor="lastName">Фамилия</label>
+                                <label htmlFor="lastName">Фамилия *</label>
                                 <input
                                     type="text"
                                     id="lastName"
@@ -193,11 +192,15 @@ const Profile: React.FC = () => {
                                     className="form-control"
                                     minLength={2}
                                     maxLength={100}
+                                    placeholder="Иванов"
                                 />
+                                <small className="form-hint">
+                                    Минимум 2, максимум 100 символов
+                                </small>
                             </div>
 
                             <div className="form-group">
-                                <label htmlFor="email">Email</label>
+                                <label htmlFor="email">Email *</label>
                                 <input
                                     type="email"
                                     id="email"
@@ -206,23 +209,28 @@ const Profile: React.FC = () => {
                                     onChange={handleProfileChange}
                                     required
                                     className="form-control"
+                                    placeholder="user@example.com"
                                 />
                             </div>
 
                             <div className="form-group">
-                                <label htmlFor="login">Логин</label>
+                                <label htmlFor="login">Логин *</label>
                                 <input
                                     type="text"
                                     id="login"
                                     name="login"
                                     value={formData.login}
                                     onChange={handleProfileChange}
+                                    required
                                     className="form-control"
                                     pattern="^[a-zA-Z0-9_]+$"
                                     minLength={3}
                                     maxLength={50}
+                                    placeholder="user_login"
                                 />
-                                <small className="form-hint">Только буквы, цифры и подчеркивания</small>
+                                <small className="form-hint">
+                                    Минимум 3, максимум 50 символов, только буквы, цифры и подчеркивания
+                                </small>
                             </div>
 
                             <div className="form-group">
@@ -234,7 +242,8 @@ const Profile: React.FC = () => {
                                     value={formData.phoneNumber}
                                     onChange={handleProfileChange}
                                     className="form-control"
-                                    pattern="^\+?[1-9]\d{1,10}$"
+                                    pattern="^$|^\+?[1-9]\d{0,10}$"
+                                    placeholder="+7XXXXXXXXXX"
                                 />
                             </div>
 
@@ -278,7 +287,7 @@ const Profile: React.FC = () => {
                                             firstName: user.firstName,
                                             lastName: user.lastName,
                                             email: user.email,
-                                            login: user.login || '',
+                                            login: user.login,
                                             phoneNumber: user.phoneNumber || '',
                                             department: user.department || '',
                                             position: user.position || ''
