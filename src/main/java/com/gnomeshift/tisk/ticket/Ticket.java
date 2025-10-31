@@ -6,7 +6,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
@@ -14,9 +16,11 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "tickets")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = {"reporter", "assignee"})
 public class Ticket {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

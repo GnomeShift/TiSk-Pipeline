@@ -48,8 +48,9 @@ public class TicketService {
 
         Ticket ticket = ticketMapper.toEntity(createTicketDTO);
         ticket.setReporter(reporter);
-        log.info("Ticket created successfully with id: {}", ticket);
-        return ticketMapper.toDto(ticketRepository.save(ticket));
+        Ticket savedTicket = ticketRepository.save(ticket);
+        log.info("Ticket created successfully with id: {}", savedTicket.getId());
+        return ticketMapper.toDto(savedTicket);
     }
 
     @Transactional
