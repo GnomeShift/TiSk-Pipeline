@@ -3,12 +3,13 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { RegisterDTO } from '../types/auth';
 import { validatePassword } from '../services/utils'
+import { useNotification } from '../contexts/NotificationContext';
 
 const Register: React.FC = () => {
     const navigate = useNavigate();
     const { register } = useAuth();
+    const notification = useNotification();
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
 
     const [formData, setFormData] = useState<RegisterDTO & { confirmPassword: string }>({
         email: '',
@@ -31,15 +32,14 @@ const Register: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError(null);
 
         if (formData.password !== formData.confirmPassword) {
-            setError('Пароли не совпадают');
+            notification.error('Пароли не совпадают');
             return;
         }
 
         if (!validatePassword(formData.password)) {
-            setError('Пароль должен содержать минимум 8 символов, включая заглавные и строчные буквы, а также цифры');
+            notification.error('Пароль должен содержать минимум 8 символов, включая заглавные и строчные буквы, а также цифры');
             return;
         }
 
@@ -50,7 +50,7 @@ const Register: React.FC = () => {
             await register(registerData);
             navigate('/');
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Ошибка регистрации. Попробуйте снова.');
+            notification.error('Ошибка регистрации');
         } finally {
             setLoading(false);
         }
@@ -60,12 +60,6 @@ const Register: React.FC = () => {
         <div className="auth-container">
             <div className="auth-card auth-card-wide">
                 <h2 className="auth-title">Регистрация</h2>
-
-                {error && (
-                    <div className="alert alert-error">
-                        {error}
-                    </div>
-                )}
 
                 <form onSubmit={handleSubmit} className="auth-form">
                     <div className="form-row">

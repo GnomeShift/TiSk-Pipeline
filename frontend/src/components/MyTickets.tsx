@@ -5,12 +5,13 @@ import { ticketService } from '../services/ticketService';
 import { getPriorityColor, getPriorityLabel, getStatusColor, getStatusLabel } from "../services/utils";
 import Pagination from './Pagination';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotification } from '../contexts/NotificationContext';
 
 const MyTickets: React.FC = () => {
     const { user } = useAuth();
+    const notification = useNotification();
     const [tickets, setTickets] = useState<TicketDTO[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(6);
     const [filterType, setFilterType] = useState<'all' | 'reported' | 'assigned'>('all');
@@ -24,9 +25,8 @@ const MyTickets: React.FC = () => {
             setLoading(true);
             const data = await ticketService.getMyTickets();
             setTickets(data);
-        } catch (err) {
-            setError('Ошибка загрузки тикетов');
-            console.error(err);
+        } catch (err: any) {
+            notification.error('Ошибка загрузки тикетов');
         } finally {
             setLoading(false);
         }
@@ -58,7 +58,6 @@ const MyTickets: React.FC = () => {
     }, [filterType]);
 
     if (loading) return <div className="loading"></div>;
-    if (error) return <div className="error">{error}</div>;
 
     return (
         <div className="my-tickets">

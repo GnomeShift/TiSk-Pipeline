@@ -6,12 +6,13 @@ import { getPriorityColor, getStatusColor, getStatusLabel, getPriorityLabel } fr
 import TicketFilters from './TicketFilters';
 import Pagination from './Pagination';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotification } from '../contexts/NotificationContext';
 
 const TicketList: React.FC = () => {
     const { user } = useAuth();
+    const notification = useNotification();
     const [allTickets, setAllTickets] = useState<TicketDTO[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
 
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(9);
@@ -31,9 +32,8 @@ const TicketList: React.FC = () => {
             setLoading(true);
             const data = await ticketService.getAll();
             setAllTickets(data);
-        } catch (err) {
-            setError('Ошибка загрузки тикетов');
-            console.error(err);
+        } catch (err: any) {
+            notification.error('Ошибка загрузки тикетов');
         } finally {
             setLoading(false);
         }
@@ -100,8 +100,9 @@ const TicketList: React.FC = () => {
             try {
                 await ticketService.delete(id);
                 await loadTickets();
-            } catch (err) {
-                alert('Ошибка при удалении тикета');
+                notification.success('Тикет успешно удален');
+            } catch (err: any) {
+                notification.error('Ошибка при удалении тикета');
             }
         }
     };
@@ -141,7 +142,6 @@ const TicketList: React.FC = () => {
     };
 
     if (loading) return <div className="loading"></div>;
-    if (error) return <div className="error">{error}</div>;
 
     return (
         <div className="ticket-list">

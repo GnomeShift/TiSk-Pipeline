@@ -3,10 +3,12 @@ import {useNavigate, useParams} from 'react-router-dom';
 import {CreateTicketDTO, TicketPriority, TicketStatus, UpdateTicketDTO} from '../types/ticket';
 import {ticketService} from '../services/ticketService';
 import {useAuth} from "../contexts/AuthContext.tsx";
+import {useNotification} from '../contexts/NotificationContext';
 import {getPriorityLabel, getStatusLabel} from "../services/utils";
 
 const TicketForm: React.FC = () => {
     const navigate = useNavigate();
+    const notification = useNotification();
     const { id } = useParams();
     const { user } = useAuth()
     const isEdit = !!id;
@@ -19,7 +21,6 @@ const TicketForm: React.FC = () => {
     });
 
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (isEdit && id) {
@@ -38,8 +39,8 @@ const TicketForm: React.FC = () => {
                 priority: ticket.priority
             });
         }
-        catch (err) {
-            setError('Ошибка загрузки тикета');
+        catch (err: any) {
+            notification.error('Ошибка загрузки тикета');
         }
         finally {
             setLoading(false);
@@ -59,6 +60,7 @@ const TicketForm: React.FC = () => {
                     priority: formData.priority
                 };
                 await ticketService.update(id, updateData);
+                notification.success('Тикет успешно обновлен');
             }
             else {
                 const createData: CreateTicketDTO = {
@@ -68,11 +70,12 @@ const TicketForm: React.FC = () => {
                     reporterId: user!.id
                 };
                 await ticketService.create(createData);
+                notification.success('Тикет успешно создан');
             }
             navigate('/');
         }
-        catch (err) {
-            setError('Ошибка при сохранении тикета');
+        catch (err: any) {
+            notification.error('Ошибка при сохранении тикета');
         }
         finally {
             setLoading(false);
@@ -93,7 +96,6 @@ const TicketForm: React.FC = () => {
     return (
         <div className="ticket-form">
             <h2>{isEdit ? 'Редактировать тикет' : 'Создать новый тикет'}</h2>
-            {error && <div className="error">{error}</div>}
 
             <form onSubmit={handleSubmit}>
                 <div className="form-group">

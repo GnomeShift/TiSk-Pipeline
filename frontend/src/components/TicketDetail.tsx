@@ -4,6 +4,7 @@ import {TicketDTO, TicketStatus} from '../types/ticket';
 import { ticketService } from '../services/ticketService';
 import {getPriorityColor, getStatusColor, getStatusLabel, getPriorityLabel, getRoleLabel} from '../services/utils';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotification } from '../contexts/NotificationContext';
 import { userService } from '../services/userService';
 import { UserDTO } from '../types/user';
 
@@ -14,7 +15,7 @@ const TicketDetail: React.FC = () => {
     const [ticket, setTicket] = useState<TicketDTO | null>(null);
     const [users, setUsers] = useState<UserDTO[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const notification = useNotification();
     const [assigneeId, setAssigneeId] = useState<string>('');
 
     useEffect(() => {
@@ -33,8 +34,8 @@ const TicketDetail: React.FC = () => {
             setTicket(data);
             setAssigneeId(data.assignee?.id || '');
         }
-        catch (err) {
-            setError('Ошибка загрузки тикета');
+        catch (err: any) {
+            notification.error('Ошибка загрузки тикета');
         }
         finally {
             setLoading(false);
@@ -45,8 +46,8 @@ const TicketDetail: React.FC = () => {
         try {
             const data = await userService.getAll();
             setUsers(data.filter(u => u.role === 'SUPPORT' || u.role === 'ADMIN'));
-        } catch (err) {
-            console.error('Ошибка загрузки пользователей:', err);
+        } catch (err: any) {
+            notification.error('Ошибка загрузки пользователей:');
         }
     };
 
@@ -63,8 +64,9 @@ const TicketDetail: React.FC = () => {
             };
             const updated = await ticketService.update(ticket.id, updateData);
             setTicket(updated);
-        } catch (err) {
-            alert('Ошибка при обновлении статуса');
+            notification.success(`Статус изменен на "${getStatusLabel(newStatus)}"`);
+        } catch (err: any) {
+            notification.error('Ошибка при обновлении статуса');
         }
     };
 
@@ -74,9 +76,10 @@ const TicketDetail: React.FC = () => {
         try {
             const updated = await ticketService.assignTicket(ticket.id, assigneeId);
             setTicket(updated);
-            alert('Тикет успешно назначен');
-        } catch (err) {
-            alert('Ошибка при назначении тикета');
+            notification.success('Тикет успешно назначен');
+            setAssigneeId('');
+        } catch (err: any) {
+            notification.error('Ошибка при назначении тикета');
         }
     };
 
@@ -86,10 +89,11 @@ const TicketDetail: React.FC = () => {
         if (window.confirm('Удалить этот тикет?')) {
             try {
                 await ticketService.delete(ticket.id);
+                notification.success('Тикет успешно удален')
                 navigate('/');
             }
-            catch (err) {
-                alert('Ошибка при удалении тикета');
+            catch (err: any) {
+                notification.error('Ошибка при удалении тикета');
             }
         }
     };
@@ -108,7 +112,6 @@ const TicketDetail: React.FC = () => {
     };
 
     if (loading) return <div className="loading"></div>;
-    if (error) return <div className="error">{error}</div>;
     if (!ticket) return <div className="error">Тикет не найден</div>;
 
     return (

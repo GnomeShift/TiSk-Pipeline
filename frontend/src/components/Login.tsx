@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { LoginDTO } from '../types/auth';
+import { useNotification } from '../contexts/NotificationContext';
 
 const Login: React.FC = () => {
     const navigate = useNavigate();
     const { login } = useAuth();
+    const notification = useNotification();
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
 
     const [formData, setFormData] = useState<LoginDTO>({
         email: '',
@@ -23,14 +24,13 @@ const Login: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError(null);
         setLoading(true);
 
         try {
             await login(formData);
             navigate('/');
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Ошибка входа.');
+            notification.error(err.response?.data?.message || 'Ошибка входа');
         } finally {
             setLoading(false);
         }
@@ -40,12 +40,6 @@ const Login: React.FC = () => {
         <div className="auth-container">
             <div className="auth-card">
                 <h2 className="auth-title">Вход в систему</h2>
-
-                {error && (
-                    <div className="alert alert-error">
-                        {error}
-                    </div>
-                )}
 
                 <form onSubmit={handleSubmit} className="auth-form">
                     <div className="form-group">

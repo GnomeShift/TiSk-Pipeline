@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotification } from '../contexts/NotificationContext';
 import { userService } from '../services/userService';
 import { ChangePasswordDTO } from '../types/auth';
 import { UpdateUserDTO } from '../types/user';
 import { getUserStatusLabel, getRoleLabel, validatePassword } from '../services/utils';
 
 const Profile: React.FC = () => {
+    const notification = useNotification();
     const { user, updateUser, changePassword } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
     const [formData, setFormData] = useState<UpdateUserDTO>({
         firstName: user?.firstName || '',
@@ -44,17 +45,16 @@ const Profile: React.FC = () => {
     const handleProfileSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        setMessage(null);
 
         try {
             if (user?.id) {
                 const updatedUser = await userService.update(user.id, formData);
                 updateUser(updatedUser);
                 setIsEditing(false);
-                setMessage({ type: 'success', text: 'Профиль успешно обновлен' });
+                notification.success('Профиль успешно обновлен');
             }
-        } catch (error) {
-            setMessage({ type: 'error', text: 'Ошибка при обновлении профиля' });
+        } catch (error: any) {
+            notification.error('Ошибка при обновлении профиля');
         } finally {
             setLoading(false);
         }
@@ -62,15 +62,14 @@ const Profile: React.FC = () => {
 
     const handlePasswordSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setMessage(null);
 
         if (passwordData.newPassword !== passwordData.confirmPassword) {
-            setMessage({ type: 'error', text: 'Пароли не совпадают' });
+            notification.error('Пароли не совпадают');
             return;
         }
 
         if (!validatePassword(passwordData.newPassword)) {
-            setMessage({ type: 'error', text: 'Пароль должен содержать минимум 8 символов, заглавные и строчные буквы, а также цифры' });
+            notification.error('Пароль должен содержать минимум 8 символов, заглавные и строчные буквы, а также цифры');
             return;
         }
 
@@ -79,9 +78,9 @@ const Profile: React.FC = () => {
         try {
             await changePassword(passwordData);
             setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-            setMessage({ type: 'success', text: 'Пароль успешно изменен' });
-        } catch (error) {
-            setMessage({ type: 'error', text: 'Неверный текущий пароль.' });
+            notification.success('Пароль успешно изменен');
+        } catch (error: any) {
+            notification.error('Неверный текущий пароль.');
         } finally {
             setLoading(false);
         }
@@ -92,12 +91,6 @@ const Profile: React.FC = () => {
     return (
         <div className="profile-container">
             <h2>Профиль пользователя</h2>
-
-            {message && (
-                <div className={`alert alert-${message.type}`}>
-                    {message.text}
-                </div>
-            )}
 
             <div className="profile-sections">
                 <div className="profile-section">

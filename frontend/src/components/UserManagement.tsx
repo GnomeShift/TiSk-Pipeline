@@ -2,14 +2,15 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { UserDTO, UserRole, UserStatus, CreateUserDTO, UpdateUserDTO } from '../types/user';
 import { userService } from '../services/userService';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotification } from '../contexts/NotificationContext.tsx'
 import Pagination from './Pagination';
-import { getRoleLabel, getUserStatusLabel, validatePassword } from '../services/utils'
+import { getRoleLabel, getUserStatusLabel, validatePassword, getStatusLabel } from '../services/utils'
 
 const UserManagement: React.FC = () => {
     const { user: currentUser } = useAuth();
+    const notification = useNotification();
     const [users, setUsers] = useState<UserDTO[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [editingUser, setEditingUser] = useState<UserDTO | null>(null);
     const [isCreating, setIsCreating] = useState(false);
 
@@ -56,9 +57,8 @@ const UserManagement: React.FC = () => {
             setLoading(true);
             const data = await userService.getAll();
             setUsers(data);
-        } catch (err) {
-            setError('Ошибка загрузки пользователей');
-            console.error(err);
+        } catch (err: any) {
+            notification.error('Ошибка загрузки пользователей');
         } finally {
             setLoading(false);
         }
@@ -169,7 +169,7 @@ const UserManagement: React.FC = () => {
         e.preventDefault();
 
         if (!validatePassword(formData.password)) {
-            setError('Пароль должен содержать минимум 8 символов, включая заглавные и строчные буквы, а также цифры');
+            notification.error('Пароль должен содержать минимум 8 символов, включая заглавные и строчные буквы, а также цифры');
             return;
         }
 
@@ -178,27 +178,30 @@ const UserManagement: React.FC = () => {
             await loadUsers();
             setIsCreating(false);
             resetForm();
+            notification.success('Пользователь успешно создан')
         } catch (err: any) {
-            alert(err.response?.data?.message || 'Ошибка при создании пользователя');
+            notification.error(err.response?.data?.message || 'Ошибка при создании пользователя');
         }
     };
 
     const handleUpdateUser = async (e: React.FormEvent) => {
         e.preventDefault();
+
         if (!editingUser) return;
 
         try {
             await userService.update(editingUser.id, editFormData);
             await loadUsers();
             setEditingUser(null);
+            notification.success('Пользователь успешно обновлен')
         } catch (err: any) {
-            alert(err.response?.data?.message || 'Ошибка при обновлении пользователя');
+            notification.error(err.response?.data?.message || 'Ошибка при обновлении пользователя');
         }
     };
 
     const handleDeleteUser = async (userId: string) => {
         if (userId === currentUser?.id) {
-            alert('Вы не можете удалить свой собственный аккаунт');
+            notification.info('Вы не можете удалить свой аккаунт');
             return;
         }
 
@@ -206,23 +209,25 @@ const UserManagement: React.FC = () => {
             try {
                 await userService.delete(userId);
                 await loadUsers();
-            } catch (err) {
-                alert('Ошибка при удалении пользователя');
+                notification.success('Пользователь успешно удален')
+            } catch (err: any) {
+                notification.error(err.response?.data?.message || 'Ошибка при удалении пользователя');
             }
         }
     };
 
     const handleChangeStatus = async (userId: string, status: UserStatus) => {
         if (userId === currentUser?.id) {
-            alert('Вы не можете изменить свой собственный статус');
+            notification.info('Вы не можете изменить свой статус');
             return;
         }
 
         try {
             await userService.changeStatus(userId, status);
             await loadUsers();
-        } catch (err) {
-            alert('Ошибка при изменении статуса');
+            notification.success(`Статус пользователя изменен на ${getStatusLabel(status)}`);
+        } catch (err: any) {
+            notification.error(err.response?.data?.message || 'Ошибка при изменении статуса');
         }
     };
 
@@ -277,7 +282,6 @@ const UserManagement: React.FC = () => {
     const hasActiveFilters = search !== '' || roleFilter !== 'ALL' || statusFilter !== 'ALL';
 
     if (loading) return <div className="loading"></div>;
-    if (error) return <div className="error">{error}</div>;
 
     return (
         <div className="user-management">
