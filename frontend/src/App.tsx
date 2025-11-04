@@ -6,7 +6,6 @@ import Layout from './components/Layout';
 import TicketList from './components/TicketList';
 import TicketForm from './components/TicketForm';
 import TicketDetail from './components/TicketDetail';
-import MyTickets from './components/MyTickets';
 import Login from './components/Login';
 import Register from './components/Register';
 import Profile from './components/Profile';
@@ -28,11 +27,6 @@ function App() {
                             <Route index element={
                                 <PrivateRoute>
                                     <TicketList />
-                                </PrivateRoute>
-                            } />
-                            <Route path="my-tickets" element={
-                                <PrivateRoute>
-                                    <MyTickets />
                                 </PrivateRoute>
                             } />
                             <Route path="create" element={

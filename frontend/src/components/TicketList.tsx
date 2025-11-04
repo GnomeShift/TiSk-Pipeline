@@ -7,12 +7,14 @@ import TicketFilters from './TicketFilters';
 import Pagination from './Pagination';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
+import { UserRole } from '../types/user';
 
 const TicketList: React.FC = () => {
     const { user } = useAuth();
     const notification = useNotification();
     const [allTickets, setAllTickets] = useState<TicketDTO[]>([]);
     const [loading, setLoading] = useState(true);
+    const [viewMode, setViewMode] = useState<'all' | 'reported' | 'assigned' | 'available'>('all');
 
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(9);
@@ -27,6 +29,18 @@ const TicketList: React.FC = () => {
         loadTickets();
     }, []);
 
+    useEffect(() => {
+        if (user) {
+            if (user.role === UserRole.USER) {
+                setViewMode('reported');
+            } else if (user.role === UserRole.SUPPORT) {
+                setViewMode('available');
+            } else {
+                setViewMode('all');
+            }
+        }
+    }, [user]);
+
     const loadTickets = async () => {
         try {
             setLoading(true);
@@ -39,8 +53,27 @@ const TicketList: React.FC = () => {
         }
     };
 
+    const getTicketsByViewMode = (tickets: TicketDTO[]): TicketDTO[] => {
+        if (!user) return [];
+
+        switch (viewMode) {
+            case 'reported': return tickets.filter(t => t.reporter?.id === user.id);
+            case 'assigned': return tickets.filter(t => t.assignee?.id === user.id);
+            case 'available': return tickets.filter(t => !t.assignee && t.status !== 'CLOSED');
+            case 'all':
+                if (user.role === UserRole.ADMIN) {
+                    return tickets;
+                } else if (user.role === UserRole.SUPPORT) {
+                    return tickets.filter(t => t.reporter?.id === user.id || t.assignee?.id === user.id || !t.assignee);
+                } else {
+                    return tickets.filter(t => t.reporter?.id === user.id);
+                }
+            default: return tickets;
+        }
+    };
+
     const filteredAndSortedTickets = useMemo(() => {
-        let filtered = [...allTickets];
+        let filtered = getTicketsByViewMode(allTickets);
 
         if (search) {
             const searchLower = search.toLowerCase();
@@ -81,7 +114,7 @@ const TicketList: React.FC = () => {
         });
 
         return filtered;
-    }, [allTickets, search, status, priority, sortBy, sortOrder]);
+    }, [allTickets, viewMode, search, status, priority, sortBy, sortOrder, user]);
 
     const paginatedTickets = useMemo(() => {
         const start = (currentPage - 1) * itemsPerPage;
@@ -93,7 +126,7 @@ const TicketList: React.FC = () => {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [search, status, priority, sortBy, sortOrder]);
+    }, [search, status, priority, sortBy, sortOrder, viewMode]);
 
     const handleDelete = async (id: string) => {
         if (window.confirm('Удалить этот тикет?')) {
@@ -107,16 +140,16 @@ const TicketList: React.FC = () => {
         }
     };
 
-    const handleSearchChange = (value: string) => {
-        setSearch(value);
-    };
+    const handleTakeTicket = async (ticketId: string) => {
+        if (!user) return;
 
-    const handleSortByChange = (value: string) => {
-        setSortBy(value as 'createdAt' | 'updatedAt' | 'priority');
-    };
-
-    const handleSortOrderChange = (value: string) => {
-        setSortOrder(value as 'asc' | 'desc');
+        try {
+            await ticketService.assignTicket(ticketId, user.id);
+            await loadTickets();
+            notification.success('Тикет взят');
+        } catch (err: any) {
+            notification.error(err.response?.data?.message || 'Ошибка при взятии тикета');
+        }
     };
 
     const handleResetFilters = () => {
@@ -134,23 +167,77 @@ const TicketList: React.FC = () => {
     };
 
     const canDelete = () => {
-        return user?.role === 'ADMIN';
+        if (!user) return false;
+        return user.role === UserRole.ADMIN;
     };
 
     const canEdit = (ticket: TicketDTO) => {
-        return user?.role === 'ADMIN' || user?.role === 'SUPPORT' || ticket.reporter?.id === user?.id;
+        if (!user) return false;
+        return user.role === UserRole.ADMIN || user.role === UserRole.SUPPORT || ticket.reporter?.id === user.id;
+    };
+
+    const canTake = (ticket: TicketDTO) => {
+        if (!user) return false;
+        return (user.role === UserRole.ADMIN || user.role === UserRole.SUPPORT) && !ticket.assignee && ticket.status !== 'CLOSED';
+    };
+
+    const getAvailableTabs = () => {
+        if (!user) return [];
+
+        const tabs: { key: 'all' | 'reported' | 'assigned' | 'available'; label: string; count: number }[] = [];
+
+        if (user.role === UserRole.ADMIN) {
+            tabs.push(
+                { key: 'all', label: 'Все', count: allTickets.length },
+                { key: 'available', label: 'Доступные', count: allTickets.filter(t => !t.assignee && t.status !== 'CLOSED').length },
+                { key: 'assigned', label: 'В работе', count: allTickets.filter(t => t.assignee?.id === user.id).length },
+                { key: 'reported', label: 'Мои', count: allTickets.filter(t => t.reporter?.id === user.id).length }
+            );
+        } else if (user.role === UserRole.SUPPORT) {
+            tabs.push(
+                { key: 'available', label: 'Доступные', count: allTickets.filter(t => !t.assignee && t.status !== 'CLOSED').length },
+                { key: 'assigned', label: 'В работе', count: allTickets.filter(t => t.assignee?.id === user.id).length },
+                { key: 'reported', label: 'Мои', count: allTickets.filter(t => t.reporter?.id === user.id).length }
+            );
+        } else {
+            tabs.push(
+                { key: 'reported', label: 'Мои', count: allTickets.filter(t => t.reporter?.id === user.id).length }
+            );
+        }
+
+        return tabs;
     };
 
     if (loading) return <div className="loading"></div>;
+
+    const availableTabs = getAvailableTabs();
 
     return (
         <div className="ticket-list">
             <div className="list-header">
                 <h2>Список тикетов</h2>
                 <div className="list-stats">
-                    Найдено: <strong>{filteredAndSortedTickets.length}</strong> из <strong>{allTickets.length}</strong>
+                    Найдено: <strong>{filteredAndSortedTickets.length}</strong>
+                    {viewMode === 'all' && user?.role === UserRole.ADMIN &&
+                        <> из <strong>{allTickets.length}</strong></>
+                    }
                 </div>
             </div>
+
+            {availableTabs.length > 1 && (
+                <div className="view-tabs">
+                    {availableTabs.map(tab => (
+                        <button
+                            key={tab.key}
+                            className={`tab ${viewMode === tab.key ? 'active' : ''}`}
+                            onClick={() => setViewMode(tab.key)}
+                        >
+                            {tab.label}
+                            <span className="tab-count">{tab.count}</span>
+                        </button>
+                    ))}
+                </div>
+            )}
 
             <TicketFilters
                 search={search}
@@ -158,11 +245,11 @@ const TicketList: React.FC = () => {
                 priority={priority}
                 sortBy={sortBy}
                 sortOrder={sortOrder}
-                onSearchChange={handleSearchChange}
+                onSearchChange={setSearch}
                 onStatusChange={setStatus}
                 onPriorityChange={setPriority}
-                onSortByChange={handleSortByChange}
-                onSortOrderChange={handleSortOrderChange}
+                onSortByChange={(value: string) => setSortBy(value as any)}
+                onSortOrderChange={(value: string) => setSortOrder(value as any)}
                 onReset={handleResetFilters}
             />
 
@@ -171,9 +258,15 @@ const TicketList: React.FC = () => {
                     <p>
                         {search || status !== 'ALL' || priority !== 'ALL'
                             ? 'Тикеты не найдены. Попробуйте изменить параметры поиска.'
-                            : 'Нет тикетов'}
+                            : viewMode === 'available'
+                                ? 'Нет доступных тикетов'
+                                : viewMode === 'assigned'
+                                    ? 'Нет тикетов'
+                                    : viewMode === 'reported'
+                                        ? 'Вы еще не создали ни одного тикета'
+                                        : 'Нет тикетов'}
                     </p>
-                    {!(search || status !== 'ALL' || priority !== 'ALL') && (
+                    {viewMode === 'reported' && !(search || status !== 'ALL' || priority !== 'ALL') && (
                         <Link to="/create" className="btn btn-primary">
                             Создать первый тикет
                         </Link>
@@ -204,13 +297,24 @@ const TicketList: React.FC = () => {
                                     {ticket.reporter && (
                                         <div className="ticket-user">
                                             <span className="user-label">Автор:</span>
+                                            <span className="user-name">
                                                 {ticket.reporter.firstName} {ticket.reporter.lastName}
+                                            </span>
                                         </div>
                                     )}
-                                    {ticket.assignee && (
+                                    {ticket.assignee ? (
                                         <div className="ticket-user">
                                             <span className="user-label">Исполнитель:</span>
+                                            <span className="user-name">
                                                 {ticket.assignee.firstName} {ticket.assignee.lastName}
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <div className="ticket-user">
+                                            <span className="user-label">Исполнитель:</span>
+                                            <span className="user-name text-muted">
+                                                Нет
+                                            </span>
                                         </div>
                                     )}
                                 </div>
@@ -223,6 +327,14 @@ const TicketList: React.FC = () => {
                                         <Link to={`/ticket/${ticket.id}`} className="btn btn-sm">
                                             Просмотр
                                         </Link>
+                                        {canTake(ticket) && (
+                                            <button
+                                                onClick={() => handleTakeTicket(ticket.id)}
+                                                className="btn btn-sm btn-primary"
+                                            >
+                                                Взять
+                                            </button>
+                                        )}
                                         {canEdit(ticket) && (
                                             <Link to={`/edit/${ticket.id}`} className="btn btn-sm">
                                                 Редактировать

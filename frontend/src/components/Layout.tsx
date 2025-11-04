@@ -21,8 +21,7 @@ const Layout: React.FC = () => {
                     <nav className="nav">
                         {isAuthenticated ? (
                             <>
-                                <Link to="/" className="nav-link">Все тикеты</Link>
-                                <Link to="/my-tickets" className="nav-link">Мои тикеты</Link>
+                                <Link to="/" className="nav-link">Тикеты</Link>
                                 <Link to="/create" className="nav-link nav-link-primary">
                                     Создать тикет
                                 </Link>
