@@ -794,7 +794,7 @@ const UserManagement: React.FC = () => {
                                                     className="btn-icon btn-primary"
                                                     title="Редактировать"
                                                 >
-                                                    ✎
+                                                    ✏️
                                                 </button>
                                                 <button
                                                     onClick={() => handleChangeStatus(
@@ -813,7 +813,7 @@ const UserManagement: React.FC = () => {
                                                     title="Удалить"
                                                     disabled={user.id === currentUser?.id}
                                                 >
-                                                    🗑
+                                                    🗑️
                                                 </button>
                                             </div>
                                         </td>
