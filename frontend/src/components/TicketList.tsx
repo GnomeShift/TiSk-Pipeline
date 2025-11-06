@@ -336,8 +336,8 @@ const TicketList: React.FC = () => {
                                             </button>
                                         )}
                                         {canEdit(ticket) && (
-                                            <Link to={`/edit/${ticket.id}`} className="btn btn-sm">
-                                                Редактировать
+                                            <Link to={`/edit/${ticket.id}`} className="btn btn-sm" title="Редактировать">
+                                                Ред.
                                             </Link>
                                         )}
                                         {canDelete() && (
