@@ -59,10 +59,12 @@ public class User implements UserDetails {
 
     @NotNull
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private UserRole role = UserRole.USER;
 
     @NotNull
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private UserStatus status = UserStatus.ACTIVE;
 
     private String phoneNumber;
@@ -71,10 +73,12 @@ public class User implements UserDetails {
 
     @OneToMany(mappedBy = "assignee", fetch = FetchType.LAZY)
     @JsonIgnore
+    @Builder.Default
     private List<Ticket> assignedTickets = new ArrayList<>();
 
     @OneToMany(mappedBy = "reporter", fetch = FetchType.LAZY)
     @JsonIgnore
+    @Builder.Default
     private List<Ticket> reportedTickets = new ArrayList<>();
 
     @NotNull

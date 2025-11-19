@@ -33,5 +33,6 @@ public interface UserMapper {
     @Mapping(target = "lastLoginAt", ignore = true)
     @Mapping(target = "reportedTickets", ignore = true)
     @Mapping(target = "assignedTickets", ignore = true)
+    @Mapping(target = "authorities", ignore = true)
     void updateUserFromDto(UpdateUserDTO dto, @MappingTarget User user);
 }
