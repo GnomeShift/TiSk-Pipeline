@@ -1,0 +1,15 @@
+# Stage 1
+FROM gradle:8.14-jdk21 AS backend-builder
+WORKDIR /app
+COPY --chown=gradle:gradle build.gradle.kts settings.gradle.kts ./
+COPY --chown=gradle:gradle gradle ./gradle
+RUN gradle dependencies --no-daemon
+COPY --chown=gradle:gradle src ./src
+RUN gradle bootJar --no-daemon
+
+# Stage 2
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+COPY --from=backend-builder /app/build/libs/*.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]
