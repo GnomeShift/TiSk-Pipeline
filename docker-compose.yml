@@ -1,0 +1,88 @@
+services:
+  tisk-db:
+    image: postgres:18-alpine
+    container_name: "tisk-db"
+    env_file:
+      - .env.production
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - tisk-db-data:/var/lib/postgresql/data
+    networks:
+      - tisk-network
+    healthcheck:
+      test: [ 'CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}' ]
+      interval: 3s
+      timeout: 10s
+      retries: 3
+    restart: no
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '50m'
+        max-file: '10'
+
+  tisk-backend:
+    image: tisk-backend:latest
+    container_name: "tisk-backend"
+    env_file:
+      - .env.production
+    networks:
+      - tisk-network
+    ports:
+      - "8080:8080"
+    depends_on:
+      tisk-db:
+        condition: service_healthy
+    restart: no
+
+  tisk-frontend:
+    image: tisk-frontend:latest
+    container_name: "tisk-frontend"
+    env_file:
+      - .env.production
+    networks:
+      - tisk-network
+    ports:
+      - "4173:4173"
+    depends_on:
+      tisk-backend:
+        condition: service_started
+      tisk-db:
+        condition: service_healthy
+    restart: no
+
+  tisk-caddy:
+    image: caddy:latest
+    container_name: "tisk-caddy"
+    hostname: tisk-caddy
+    restart: no
+    ports:
+      - "0.0.0.0:443:443"
+      - "0.0.0.0:80:80"
+    networks:
+      - tisk-network
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - tisk-caddy-ssl-data:/data
+
+volumes:
+  tisk-db-data:
+    driver: local
+    external: false
+    name: tisk-db-data
+
+  tisk-caddy-ssl-data:
+    driver: local
+    external: false
+    name: tisk-caddy-ssl-data
+
+networks:
+  tisk-network:
+    driver: bridge
+    external: false
+    name: tisk-network
