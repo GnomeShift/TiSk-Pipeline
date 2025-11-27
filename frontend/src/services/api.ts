@@ -1,10 +1,8 @@
 import axios, { AxiosError } from 'axios';
+import { env } from './env';
 
 const getApiUrl = () => {
-    if (import.meta.env.DEV) {
-        return 'http://localhost:8080/api';
-    }
-    return '/api';
+    return env.apiUrl;
 };
 
 const api = axios.create({
