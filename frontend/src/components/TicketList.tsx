@@ -279,7 +279,11 @@ const TicketList: React.FC = () => {
                             <div key={ticket.id} className="ticket-card">
                                 <div className="ticket-header">
                                     <h3 className="ticket-title">
-                                        <Link to={`/ticket/${ticket.id}`}>{ticket.title}</Link>
+                                        <Link to={`/ticket/${ticket.id}`}
+                                              title={ticket.title.length > 36 ? ticket.title : undefined}
+                                        >
+                                            {ticket.title}
+                                        </Link>
                                     </h3>
                                     <span className={`priority ${getPriorityColor(ticket.priority)}`}>
                                         {getPriorityLabel(ticket.priority)}
