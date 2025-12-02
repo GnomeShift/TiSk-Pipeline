@@ -1,21 +1,17 @@
 {
     log {
-        output file stdout
+        output stdout
         format console
     }
 }
 
-localhost:80 {
+:80 {
     reverse_proxy /api/* tisk-backend:8080
     reverse_proxy tisk-frontend:4173
 }
 
 :443 {
     tls internal
-    handle /api/* {
-            reverse_proxy tisk-backend:8080
-        }
-    handle {
-        reverse_proxy tisk-frontend:4173
-    }
+    reverse_proxy /api/* tisk-backend:8080
+    reverse_proxy tisk-frontend:4173
 }

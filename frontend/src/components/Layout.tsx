@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { env } from '../services/env'
 
 const Layout: React.FC = () => {
     const { user, isAuthenticated, logout } = useAuth();
@@ -16,7 +17,7 @@ const Layout: React.FC = () => {
             <header className="header">
                 <div className="container">
                     <h1 className="logo">
-                        <Link to="/">{import.meta.env.VITE_APP_TITLE}</Link>
+                        <Link to="/">{env.appTitle}</Link>
                     </h1>
                     <nav className="nav">
                         {isAuthenticated ? (

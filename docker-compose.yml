@@ -19,7 +19,7 @@ services:
       interval: 3s
       timeout: 10s
       retries: 3
-    restart: no
+    restart: unless-stopped
     logging:
       driver: 'json-file'
       options:
@@ -38,7 +38,7 @@ services:
     depends_on:
       tisk-db:
         condition: service_healthy
-    restart: no
+    restart: unless-stopped
 
   tisk-frontend:
     image: tisk-frontend:latest
@@ -54,13 +54,13 @@ services:
         condition: service_started
       tisk-db:
         condition: service_healthy
-    restart: no
+    restart: unless-stopped
 
   tisk-caddy:
     image: caddy:latest
     container_name: "tisk-caddy"
     hostname: tisk-caddy
-    restart: no
+    restart: unless-stopped
     ports:
       - "0.0.0.0:443:443"
       - "0.0.0.0:80:80"
