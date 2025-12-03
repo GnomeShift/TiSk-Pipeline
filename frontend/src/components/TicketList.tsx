@@ -298,11 +298,18 @@ const TicketList: React.FC = () => {
                                 </div>
 
                                 <div className="ticket-users">
-                                    {ticket.reporter && (
+                                    {ticket.reporter ? (
                                         <div className="ticket-user">
                                             <span className="user-label">Автор:</span>
                                             <span className="user-name">
                                                 {ticket.reporter.firstName} {ticket.reporter.lastName}
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <div className="ticket-user">
+                                            <span className="user-label">Автор:</span>
+                                            <span className="user-name text-muted">
+                                                Нет
                                             </span>
                                         </div>
                                     )}
