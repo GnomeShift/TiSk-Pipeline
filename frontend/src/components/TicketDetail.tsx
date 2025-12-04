@@ -122,6 +122,11 @@ const TicketDetail: React.FC = () => {
         return user.role === UserRole.ADMIN || user.role === UserRole.SUPPORT || ticket.reporter?.id === user.id;
     };
 
+    const canChangeStatus = () => {
+        if (!user) return false;
+        return user.role === UserRole.ADMIN || user.role === UserRole.SUPPORT;
+    };
+
     const canDelete = () => {
         return user?.role === UserRole.ADMIN;
     };
@@ -171,7 +176,7 @@ const TicketDetail: React.FC = () => {
                         <dl>
                             <dt>Статус:</dt>
                             <dd>
-                                {canEdit() ? (
+                                {canChangeStatus() ? (
                                     <select
                                         value={ticket.status}
                                         onChange={(e) => handleStatusChange(e.target.value as TicketStatus)}

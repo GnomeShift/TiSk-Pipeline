@@ -5,6 +5,7 @@ import {ticketService} from '../services/ticketService';
 import {useAuth} from "../contexts/AuthContext.tsx";
 import {useNotification} from '../contexts/NotificationContext';
 import {getPriorityLabel, getStatusLabel} from "../services/utils";
+import {UserRole} from '../types/user.ts';
 
 const TicketForm: React.FC = () => {
     const navigate = useNavigate();
@@ -91,6 +92,11 @@ const TicketForm: React.FC = () => {
         });
     };
 
+    const canChangeStatus = () => {
+        if (!user) return false;
+        return user.role === UserRole.ADMIN || user.role === UserRole.SUPPORT;
+    };
+
     if (loading && isEdit) return <div className="loading"/>;
 
     return (
@@ -151,7 +157,7 @@ const TicketForm: React.FC = () => {
                         </select>
                     </div>
 
-                    {isEdit && (
+                    {isEdit && canChangeStatus() && (
                         <div className="form-group">
                             <label htmlFor="status">Статус</label>
                             <select

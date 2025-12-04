@@ -12,6 +12,13 @@ const Layout: React.FC = () => {
         navigate('/login');
     };
 
+    const getUserInitials = () => {
+        if (!user) return '';
+        const first = user.firstName?.charAt(0) || '';
+        const last = user.lastName?.charAt(0) || '';
+        return (first + last).toUpperCase();
+    };
+
     return (
         <div className="app">
             <header className="header">
@@ -28,17 +35,37 @@ const Layout: React.FC = () => {
                                 </Link>
 
                                 <div className="nav-user">
-                                    <span className="user-login">{user?.login}</span>
+                                    <div className="nav-user-avatar">
+                                        {getUserInitials()}
+                                    </div>
                                     <div className="user-menu">
+                                        <div className="user-menu-header">
+                                            <div className="user-menu-avatar">
+                                                {getUserInitials()}
+                                            </div>
+                                            <div className="user-menu-info">
+                                                <span className="user-menu-name">
+                                                    {user?.firstName} {user?.lastName}
+                                                </span>
+                                                <span className="user-menu-email">
+                                                    {user?.email}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="user-menu-divider"></div>
                                         <Link to="/profile" className="user-menu-item">
+                                            <span className="user-menu-icon">👤</span>
                                             Профиль
                                         </Link>
                                         {user?.role === 'ADMIN' && (
                                             <Link to="/users" className="user-menu-item">
+                                                <span className="user-menu-icon">⚙️</span>
                                                 Управление пользователями
                                             </Link>
                                         )}
-                                        <button onClick={handleLogout} className="user-menu-item">
+                                        <div className="user-menu-divider"></div>
+                                        <button onClick={handleLogout} className="user-menu-item user-menu-logout">
+                                            <span className="user-menu-icon">🚪</span>
                                             Выйти
                                         </button>
                                     </div>
