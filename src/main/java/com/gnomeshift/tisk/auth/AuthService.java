@@ -49,6 +49,7 @@ public class AuthService {
                 .position(registerDTO.getPosition())
                 .role(UserRole.USER)
                 .status(UserStatus.ACTIVE)
+                .lastLoginAt(LocalDateTime.now())
                 .build();
 
         User savedUser = userRepository.save(user);
@@ -56,9 +57,6 @@ public class AuthService {
 
         String accessToken = jwtService.generateAccessToken(savedUser);
         String refreshToken = jwtService.generateRefreshToken(savedUser);
-
-        savedUser.setLastLoginAt(LocalDateTime.now());
-        userRepository.save(savedUser);
 
         return AuthResponseDTO.builder()
                 .accessToken(accessToken)
