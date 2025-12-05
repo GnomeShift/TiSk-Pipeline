@@ -64,8 +64,8 @@ public class TicketService {
 
         if (updateTicketDTO.getReporterId() != null) {
             User reporter = userRepository.findById(updateTicketDTO.getReporterId())
-                    .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
-            ticket.setAssignee(reporter);
+                    .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + updateTicketDTO.getReporterId()));
+            ticket.setReporter(reporter);
         }
 
         Ticket savedTicket = ticketRepository.save(ticket);
