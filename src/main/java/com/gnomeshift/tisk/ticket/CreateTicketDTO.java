@@ -1,7 +1,5 @@
 package com.gnomeshift.tisk.ticket;
 
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -23,13 +21,11 @@ public class CreateTicketDTO {
     @Size(min = 1, max = 5000, message = "Description must be between 1 and 5000 characters")
     private String description;
 
-    @NotNull(message = "Status required")
-    @Enumerated(EnumType.STRING)
     private TicketStatus status = TicketStatus.OPEN;
 
     @NotNull(message = "Priority required")
-    @Enumerated(EnumType.STRING)
     private TicketPriority priority;
 
+    @NotNull(message = "Reporter ID required")
     private UUID reporterId;
 }

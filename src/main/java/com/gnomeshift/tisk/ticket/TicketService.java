@@ -64,8 +64,8 @@ public class TicketService {
 
         if (updateTicketDTO.getReporterId() != null) {
             User reporter = userRepository.findById(updateTicketDTO.getReporterId())
-                    .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
-            ticket.setAssignee(reporter);
+                    .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + updateTicketDTO.getReporterId()));
+            ticket.setReporter(reporter);
         }
 
         Ticket savedTicket = ticketRepository.save(ticket);
@@ -97,6 +97,10 @@ public class TicketService {
     @Transactional
     public void deleteTicket(UUID id) {
         log.info("Deleting ticket with id: {}", id);
+
+        if (!ticketRepository.existsById(id)) {
+            throw new EntityNotFoundException("Ticket not found with id: " + id);
+        }
 
         ticketRepository.deleteById(id);
         log.info("Ticket deleted successfully: {}", id);
