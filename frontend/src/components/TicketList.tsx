@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { TicketDTO } from '../types/ticket';
 import { ticketService } from '../services/ticketService';
-import { getPriorityColor, getStatusColor, getStatusLabel, getPriorityLabel } from '../services/utils';
+import { getPriorityStyle, getStatusStyle, getStatusLabel, getPriorityLabel } from '../services/utils';
 import TicketFilters from './TicketFilters';
 import Pagination from './Pagination';
 import { useAuth } from '../contexts/AuthContext';
@@ -285,13 +285,13 @@ const TicketList: React.FC = () => {
                                             {ticket.title}
                                         </Link>
                                     </h3>
-                                    <span className={`priority ${getPriorityColor(ticket.priority)}`}>
+                                    <span className={`priority ${getPriorityStyle(ticket.priority)}`}>
                                         {getPriorityLabel(ticket.priority)}
                                     </span>
                                 </div>
                                 <p className="ticket-description">{ticket.description}</p>
                                 <div className="ticket-meta">
-                                    <span className={`status ${getStatusColor(ticket.status)}`}>
+                                    <span className={`status ${getStatusStyle(ticket.status)}`}>
                                         {getStatusLabel(ticket.status)}
                                     </span>
                                     <span className="ticket-id">#{ticket.id.substring(0, 8)}</span>

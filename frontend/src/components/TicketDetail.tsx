@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {TicketDTO, TicketStatus} from '../types/ticket';
 import { ticketService } from '../services/ticketService';
-import {getPriorityColor, getStatusColor, getStatusLabel, getPriorityLabel, getRoleLabel} from '../services/utils';
+import {getPriorityStyle, getStatusStyle, getStatusLabel, getPriorityLabel, getRoleLabel} from '../services/utils';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { userService } from '../services/userService';
@@ -187,7 +187,7 @@ const TicketDetail: React.FC = () => {
                                         <option value={TicketStatus.CLOSED}>{getStatusLabel(TicketStatus.CLOSED)}</option>
                                     </select>
                                 ) : (
-                                    <span className={`status ${getStatusColor(ticket.status)}`}>
+                                    <span className={`status ${getStatusStyle(ticket.status)}`}>
                                         {getStatusLabel(ticket.status)}
                                     </span>
                                 )}
@@ -195,7 +195,7 @@ const TicketDetail: React.FC = () => {
 
                             <dt>Приоритет:</dt>
                             <dd>
-                                <span className={`priority ${getPriorityColor(ticket.priority)}`}>
+                                <span className={`priority ${getPriorityStyle(ticket.priority)}`}>
                                     {getPriorityLabel(ticket.priority)}
                                 </span>
                             </dd>

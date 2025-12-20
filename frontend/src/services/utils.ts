@@ -1,6 +1,6 @@
 import { UserRole, UserStatus } from '../types/user';
 
-export const getStatusColor = (status: string) => {
+export const getStatusStyle = (status: string) => {
     switch (status) {
         case 'OPEN': return 'status-open';
         case 'IN_PROGRESS': return 'status-progress';
@@ -9,7 +9,7 @@ export const getStatusColor = (status: string) => {
     }
 };
 
-export const getPriorityColor = (priority: string) => {
+export const getPriorityStyle = (priority: string) => {
     switch (priority) {
         case 'VERY_HIGH': return 'priority-very-high';
         case 'HIGH': return 'priority-high';
