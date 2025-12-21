@@ -28,6 +28,12 @@ export const getStatusLabel = (status: string) => {
     }
 };
 
+export const getStatusColor: Record<string, string> = {
+    OPEN: '#28a745',
+    IN_PROGRESS: '#ffc107',
+    CLOSED: '#6c757d'
+};
+
 export const getPriorityLabel = (priority: string) => {
     switch (priority) {
         case 'VERY_HIGH': return 'Очень высокий';

@@ -12,6 +12,7 @@ import Profile from './components/Profile';
 import UserManagement from './components/UserManagement';
 import PrivateRoute from './components/PrivateRoute';
 import { UserRole } from './types/user';
+import Statistics from './components/Statistics';
 
 function App() {
     return (
@@ -49,7 +50,11 @@ function App() {
                                     <Profile />
                                 </PrivateRoute>
                             } />
-
+                            <Route path="statistics" element={
+                                <PrivateRoute requiredRole={UserRole.ADMIN}>
+                                    <Statistics />
+                                </PrivateRoute>
+                            } />
                             <Route path="users" element={
                                 <PrivateRoute requiredRole={UserRole.ADMIN}>
                                     <UserManagement />

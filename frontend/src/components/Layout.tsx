@@ -29,6 +29,11 @@ const Layout: React.FC = () => {
                     <nav className="nav">
                         {isAuthenticated ? (
                             <>
+                                {(user?.role === 'ADMIN') && (
+                                    <Link to="/statistics" className="nav-link">
+                                        Статистика
+                                    </Link>
+                                )}
                                 <Link to="/" className="nav-link">Тикеты</Link>
                                 <Link to="/create" className="nav-link nav-link-primary">
                                     Создать тикет
