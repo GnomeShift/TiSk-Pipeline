@@ -385,7 +385,7 @@ const UserManagement: React.FC = () => {
                             <div className="form-row">
                                 <FormInput
                                     type="text"
-                                    id="firstName"
+                                    id="create-firstName"
                                     name="firstName"
                                     label="Имя"
                                     value={formData.firstName}
@@ -400,7 +400,7 @@ const UserManagement: React.FC = () => {
                                 />
                                 <FormInput
                                     type="text"
-                                    id="lastName"
+                                    id="create-lastName"
                                     name="lastName"
                                     label="Фамилия"
                                     value={formData.lastName}
@@ -417,7 +417,7 @@ const UserManagement: React.FC = () => {
 
                             <FormInput
                                 type="email"
-                                id="email"
+                                id="create-email"
                                 name="email"
                                 label="Email"
                                 value={formData.email}
@@ -433,7 +433,7 @@ const UserManagement: React.FC = () => {
                             <div className="form-row">
                                 <FormInput
                                     type="text"
-                                    id="login"
+                                    id="create-login"
                                     name="login"
                                     label="Логин"
                                     value={formData.login}
@@ -449,7 +449,7 @@ const UserManagement: React.FC = () => {
                                     onValidationChange={createValidation.registerFieldError}
                                 />
                                 <PasswordInput
-                                    id="password"
+                                    id="create-password"
                                     name="password"
                                     label="Пароль"
                                     value={formData.password}
@@ -465,7 +465,7 @@ const UserManagement: React.FC = () => {
                             <div className="form-row">
                                 <FormInput
                                     type="tel"
-                                    id="phoneNumber"
+                                    id="create-phoneNumber"
                                     name="phoneNumber"
                                     label="Телефон"
                                     value={formData.phoneNumber || ''}
@@ -477,11 +477,11 @@ const UserManagement: React.FC = () => {
                                     onValidationChange={createValidation.registerFieldError}
                                 />
                                 <div className="form-group">
-                                    <label htmlFor="role">
-                                        Роль<span className="required-mark">*</span>
+                                    <label htmlFor="create-role">
+                                        Роль
                                     </label>
                                     <select
-                                        id="role"
+                                        id="create-role"
                                         name="role"
                                         value={formData.role}
                                         onChange={handleFormChange}
@@ -498,7 +498,7 @@ const UserManagement: React.FC = () => {
                             <div className="form-row">
                                 <FormInput
                                     type="text"
-                                    id="department"
+                                    id="create-department"
                                     name="department"
                                     label="Отдел"
                                     value={formData.department || ''}
@@ -509,7 +509,7 @@ const UserManagement: React.FC = () => {
                                 />
                                 <FormInput
                                     type="text"
-                                    id="position"
+                                    id="create-position"
                                     name="position"
                                     label="Должность"
                                     value={formData.position || ''}
@@ -547,7 +547,7 @@ const UserManagement: React.FC = () => {
                             <div className="form-row">
                                 <FormInput
                                     type="text"
-                                    id="firstName"
+                                    id="edit-firstName"
                                     name="firstName"
                                     label="Имя"
                                     value={editFormData.firstName || ''}
@@ -562,7 +562,7 @@ const UserManagement: React.FC = () => {
                                 />
                                 <FormInput
                                     type="text"
-                                    id="lastName"
+                                    id="edit-lastName"
                                     name="lastName"
                                     label="Фамилия"
                                     value={editFormData.lastName || ''}
@@ -579,7 +579,7 @@ const UserManagement: React.FC = () => {
 
                             <FormInput
                                 type="email"
-                                id="email"
+                                id="edit-email"
                                 name="email"
                                 label="Email"
                                 value={editFormData.email || ''}
@@ -594,7 +594,7 @@ const UserManagement: React.FC = () => {
 
                             <FormInput
                                 type="text"
-                                id="login"
+                                id="edit-login"
                                 name="login"
                                 label="Логин"
                                 value={editFormData.login || ''}
@@ -613,7 +613,7 @@ const UserManagement: React.FC = () => {
                             <div className="form-row">
                                 <FormInput
                                     type="tel"
-                                    id="phoneNumber"
+                                    id="edit-phoneNumber"
                                     name="phoneNumber"
                                     label="Телефон"
                                     value={editFormData.phoneNumber || ''}
@@ -625,11 +625,11 @@ const UserManagement: React.FC = () => {
                                     onValidationChange={editValidation.registerFieldError}
                                 />
                                 <div className="form-group">
-                                    <label htmlFor="role">
-                                        Роль<span className="required-mark">*</span>
+                                    <label htmlFor="edit-role">
+                                        Роль
                                     </label>
                                     <select
-                                        id="role"
+                                        id="edit-role"
                                         name="role"
                                         value={editFormData.role}
                                         onChange={handleEditFormChange}
@@ -649,7 +649,7 @@ const UserManagement: React.FC = () => {
                             <div className="form-row">
                                 <FormInput
                                     type="text"
-                                    id="department"
+                                    id="edit-department"
                                     name="department"
                                     label="Отдел"
                                     value={editFormData.department || ''}
@@ -660,7 +660,7 @@ const UserManagement: React.FC = () => {
                                 />
                                 <FormInput
                                     type="text"
-                                    id="position"
+                                    id="edit-position"
                                     name="position"
                                     label="Должность"
                                     value={editFormData.position || ''}
@@ -673,10 +673,10 @@ const UserManagement: React.FC = () => {
 
                             <div className="form-group">
                                 <label htmlFor="status">
-                                    Статус<span className="required-mark">*</span>
+                                    Статус
                                 </label>
                                 <select
-                                    id="status"
+                                    id="edit-status"
                                     name="status"
                                     value={editFormData.status}
                                     onChange={handleEditFormChange}
