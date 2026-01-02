@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useMemo, useEffect, forwardRef, useImperativeHandle, useCallback, useRef } from 'react';
 
 interface PasswordRequirement {
     id: string;
@@ -67,6 +67,16 @@ const PasswordInput = forwardRef<PasswordInputRef, PasswordInputProps>(({
     const [touched, setTouched] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
+    // Ref for tracking previous forceValidate
+    const prevForceValidateRef = useRef(forceValidate);
+
+    // Ref for storing callback
+    const onValidationChangeRef = useRef(onValidationChange);
+    useEffect(() => {
+        onValidationChangeRef.current = onValidationChange;
+    }, [onValidationChange]);
+
+    // Memoize requirements status
     const requirementsStatus = useMemo(() => {
         return passwordRequirements.map(req => ({
             ...req,
@@ -74,27 +84,48 @@ const PasswordInput = forwardRef<PasswordInputRef, PasswordInputProps>(({
         }));
     }, [value]);
 
-    const allPassed = requirementsStatus.every(req => req.passed);
-    const passedCount = requirementsStatus.filter(req => req.passed).length;
+    const allPassed = useMemo(() =>
+            requirementsStatus.every(req => req.passed),
+        [requirementsStatus]
+    );
 
-    const strengthPercent = (passedCount / passwordRequirements.length) * 100;
+    const passedCount = useMemo(() =>
+            requirementsStatus.filter(req => req.passed).length,
+        [requirementsStatus]
+    );
 
-    const getStrengthLabel = () => {
-        if (passedCount === 0) return '';
-        if (passedCount === 1) return 'Слабый';
-        if (passedCount === 2) return 'Средний';
-        if (passedCount === 3) return 'Хороший';
-        return 'Надежный';
-    };
+    const strengthPercent = useMemo(() =>
+            (passedCount / passwordRequirements.length) * 100,
+        [passedCount]
+    );
 
-    const getStrengthColor = () => {
-        if (passedCount <= 1) return '#dc3545';
-        if (passedCount === 2) return '#ffc107';
-        if (passedCount === 3) return '#17a2b8';
-        return '#28a745';
-    };
+    // Memoize strength indicator
+    const strengthInfo = useMemo(() => {
+        let label: string;
+        let color: string;
 
-    const getError = (): string => {
+        if (passedCount === 0) {
+            label = '';
+            color = '#dc3545';
+        } else if (passedCount === 1) {
+            label = 'Слабый';
+            color = '#dc3545';
+        } else if (passedCount === 2) {
+            label = 'Средний';
+            color = '#ffc107';
+        } else if (passedCount === 3) {
+            label = 'Хороший';
+            color = '#17a2b8';
+        } else {
+            label = 'Надежный';
+            color = '#28a745';
+        }
+
+        return { label, color };
+    }, [passedCount]);
+
+    // Memoize error getter
+    const getError = useCallback((): string => {
         if (required && !value) {
             return `${label} обязательно для заполнения`;
         }
@@ -102,8 +133,9 @@ const PasswordInput = forwardRef<PasswordInputRef, PasswordInputProps>(({
             return 'Пароль не соответствует требованиям';
         }
         return '';
-    };
+    }, [required, value, label, allPassed]);
 
+    // Expose by ref
     useImperativeHandle(ref, () => ({
         validate: () => {
             const err = getError();
@@ -111,39 +143,49 @@ const PasswordInput = forwardRef<PasswordInputRef, PasswordInputProps>(({
             return err;
         },
         getValue: () => value
-    }));
+    }), [getError, value]);
 
     // Force validation
     useEffect(() => {
-        if (forceValidate > 0) {
+        if (forceValidate > 0 && forceValidate !== prevForceValidateRef.current) {
+            prevForceValidateRef.current = forceValidate;
             setTouched(true);
             const err = getError();
-            onValidationChange?.(name, err);
+            onValidationChangeRef.current?.(name, err);
         }
-    }, [forceValidate]);
+    }, [forceValidate, getError, name]);
 
     // Refresh validation on value change
     useEffect(() => {
         if (touched) {
             const err = getError();
-            onValidationChange?.(name, err);
+            onValidationChangeRef.current?.(name, err);
         }
-    }, [value, allPassed, touched]);
+    }, [value, allPassed, touched, getError, name]);
 
-    const handleBlur = () => {
+    const handleBlur = useCallback(() => {
         setFocused(false);
         setTouched(true);
         const err = getError();
-        onValidationChange?.(name, err);
-    };
+        onValidationChangeRef.current?.(name, err);
+    }, [getError, name]);
 
-    const handleFocus = () => {
+    const handleFocus = useCallback(() => {
         setFocused(true);
-    };
+    }, []);
 
-    const hasError = touched && (required && !value || (value && !allPassed));
+    const toggleShowPassword = useCallback(() => {
+        setShowPassword(prev => !prev);
+    }, []);
 
+    // Calculate states
+    const hasError = touched && ((required && !value) || (!!value && !allPassed));
     const showRequirementsList = showRequirements && (focused || (touched && !allPassed)) && value.length > 0;
+
+    const inputClassName = useMemo(() =>
+            `form-control ${hasError ? 'input-error' : ''} ${focused ? 'input-focused' : ''}`,
+        [hasError, focused]
+    );
 
     return (
         <div className={`form-group ${hasError ? 'has-error' : ''}`}>
@@ -164,16 +206,16 @@ const PasswordInput = forwardRef<PasswordInputRef, PasswordInputProps>(({
                     placeholder={placeholder}
                     disabled={disabled}
                     autoComplete={autoComplete}
-                    className={`form-control ${hasError ? 'input-error' : ''} ${focused ? 'input-focused' : ''}`}
-                    aria-invalid={hasError || undefined}
+                    className={inputClassName}
                 />
 
                 <button
                     type="button"
                     className="password-toggle"
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={toggleShowPassword}
                     tabIndex={-1}
                     aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
+                    disabled={disabled}
                 >
                     {showPassword ? '🙈' : '👁️'}
                 </button>
@@ -201,16 +243,18 @@ const PasswordInput = forwardRef<PasswordInputRef, PasswordInputProps>(({
                             className="password-strength-fill"
                             style={{
                                 width: `${strengthPercent}%`,
-                                backgroundColor: getStrengthColor()
+                                backgroundColor: strengthInfo.color
                             }}
                         />
                     </div>
-                    <span
-                        className="password-strength-label"
-                        style={{ color: getStrengthColor() }}
-                    >
-                        {getStrengthLabel()}
-                    </span>
+                    {strengthInfo.label && (
+                        <span
+                            className="password-strength-label"
+                            style={{ color: strengthInfo.color }}
+                        >
+                            {strengthInfo.label}
+                        </span>
+                    )}
                 </div>
             )}
 

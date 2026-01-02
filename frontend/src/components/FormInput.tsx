@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
+import React, { useState, useEffect, useImperativeHandle, forwardRef, useCallback, useMemo } from 'react';
 
 export interface ValidationRule {
     validate: (value: string) => boolean;
@@ -67,7 +67,8 @@ const FormInput = forwardRef<FormInputRef, FormInputProps>(({
 
     const isTextarea = type === 'textarea';
 
-    const validate = (val: string): string => {
+    // Memoize validation
+    const validate = useCallback((val: string): string => {
         if (required && !val.trim()) {
             return `${label} обязательно для заполнения`;
         }
@@ -87,7 +88,7 @@ const FormInput = forwardRef<FormInputRef, FormInputProps>(({
         }
 
         return '';
-    };
+    }, [required, label, minLength, maxLength, rules]);
 
     useImperativeHandle(ref, () => ({
         validate: () => {
@@ -97,7 +98,7 @@ const FormInput = forwardRef<FormInputRef, FormInputProps>(({
             return err;
         },
         getValue: () => value
-    }));
+    }), [validate, value]);
 
     // Force validation on forceValidate change
     useEffect(() => {
@@ -109,6 +110,7 @@ const FormInput = forwardRef<FormInputRef, FormInputProps>(({
         }
     }, [forceValidate]);
 
+    // External error
     useEffect(() => {
         if (externalError) {
             setError(externalError);
@@ -116,20 +118,21 @@ const FormInput = forwardRef<FormInputRef, FormInputProps>(({
         }
     }, [externalError]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         onChange(e);
+        const newValue = e.target.value;
 
         if (validateOnChange && touched) {
-            const err = validate(e.target.value);
+            const err = validate(newValue);
             setError(err);
             onValidationChange?.(name, err);
         } else if (error) {
             setError('');
             onValidationChange?.(name, '');
         }
-    };
+    }, [onChange, validateOnChange, touched, validate, name, onValidationChange, error]);
 
-    const handleBlur = () => {
+    const handleBlur = useCallback(() => {
         setFocused(false);
         setTouched(true);
 
@@ -138,21 +141,19 @@ const FormInput = forwardRef<FormInputRef, FormInputProps>(({
             setError(err);
             onValidationChange?.(name, err);
         }
-    };
+    }, [validateOnBlur, validate, value, name, onValidationChange]);
 
-    const handleFocus = () => {
+    const handleFocus = useCallback(() => {
         setFocused(true);
-    };
+    }, []);
 
-    const hasError = touched && error;
-    const isValid = touched && !error && value && showSuccessState;
+    const hasError = touched && !!error;
+    const isValid = touched && !error && !!value && showSuccessState;
 
-    const getAriaInvalid = (): boolean | undefined => {
-        if (hasError) return true;
-        return undefined;
-    };
-
-    const inputClassName = `form-control ${hasError ? 'input-error' : ''} ${focused ? 'input-focused' : ''}`;
+    const inputClassName = useMemo(() =>
+            `form-control ${hasError ? 'input-error' : ''} ${focused ? 'input-focused' : ''}`,
+        [hasError, focused]
+    );
 
     return (
         <div className={`form-group ${hasError ? 'has-error' : ''}`}>
@@ -175,8 +176,7 @@ const FormInput = forwardRef<FormInputRef, FormInputProps>(({
                         autoComplete={autoComplete}
                         autoFocus={autoFocus}
                         className={inputClassName}
-                        aria-invalid={getAriaInvalid()}
-                        aria-describedby={hasError ? `${id}-error` : hint ? `${id}-hint` : undefined}
+                        aria-invalid={hasError ? true : undefined}
                         rows={rows || 4}
                         minLength={minLength}
                         maxLength={maxLength}
@@ -195,8 +195,7 @@ const FormInput = forwardRef<FormInputRef, FormInputProps>(({
                         autoComplete={autoComplete}
                         autoFocus={autoFocus}
                         className={inputClassName}
-                        aria-invalid={getAriaInvalid()}
-                        aria-describedby={hasError ? `${id}-error` : hint ? `${id}-hint` : undefined}
+                        aria-invalid={hasError ? true : undefined}
                         minLength={minLength}
                         maxLength={maxLength}
                         pattern={pattern}

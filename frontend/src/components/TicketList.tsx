@@ -53,28 +53,36 @@ const TicketList: React.FC = () => {
         }
     };
 
-    const getTicketsByViewMode = (tickets: TicketDTO[]): TicketDTO[] => {
+    const filteredAndSortedTickets = useMemo(() => {
         if (!user) return [];
 
+        // Inline
+        let filtered: TicketDTO[];
+
         switch (viewMode) {
-            case 'reported': return tickets.filter(t => t.reporter?.id === user.id);
-            case 'assigned': return tickets.filter(t => t.assignee?.id === user.id);
-            case 'available': return tickets.filter(t => !t.assignee && t.status !== 'CLOSED');
+            case 'reported':
+                filtered = allTickets.filter(t => t.reporter?.id === user.id);
+                break;
+            case 'assigned':
+                filtered = allTickets.filter(t => t.assignee?.id === user.id);
+                break;
+            case 'available':
+                filtered = allTickets.filter(t => !t.assignee && t.status !== 'CLOSED');
+                break;
             case 'all':
                 if (user.role === UserRole.ADMIN) {
-                    return tickets;
+                    filtered = [...allTickets];
                 } else if (user.role === UserRole.SUPPORT) {
-                    return tickets.filter(t => t.reporter?.id === user.id || t.assignee?.id === user.id || !t.assignee);
+                    filtered = allTickets.filter(t => t.reporter?.id === user.id || t.assignee?.id === user.id || !t.assignee);
                 } else {
-                    return tickets.filter(t => t.reporter?.id === user.id);
+                    filtered = allTickets.filter(t => t.reporter?.id === user.id);
                 }
-            default: return tickets;
+                break;
+            default:
+                filtered = [...allTickets];
         }
-    };
 
-    const filteredAndSortedTickets = useMemo(() => {
-        let filtered = [...getTicketsByViewMode(allTickets)];
-
+        // Search
         if (search) {
             const searchLower = search.toLowerCase();
             filtered = filtered.filter(ticket =>
@@ -84,6 +92,7 @@ const TicketList: React.FC = () => {
             );
         }
 
+        // Filters
         if (status !== 'ALL') {
             filtered = filtered.filter(ticket => ticket.status === status);
         }
@@ -92,6 +101,7 @@ const TicketList: React.FC = () => {
             filtered = filtered.filter(ticket => ticket.priority === priority);
         }
 
+        // Sorting
         filtered.sort((a, b) => {
             let aVal: any = a[sortBy as keyof TicketDTO];
             let bVal: any = b[sortBy as keyof TicketDTO];
