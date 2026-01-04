@@ -2,9 +2,12 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { UserDTO, UserRole, UserStatus, CreateUserDTO, UpdateUserDTO } from '../types/user';
 import { userService } from '../services/userService';
 import { useAuth } from '../contexts/AuthContext';
-import { useNotification } from '../contexts/NotificationContext.tsx'
+import { useNotification } from '../contexts/NotificationContext.tsx';
 import Pagination from './Pagination';
-import { getRoleLabel, getUserStatusLabel, validatePassword, getStatusLabel } from '../services/utils'
+import { getRoleLabel, getUserStatusLabel } from '../services/utils';
+import FormInput, { validationRules } from './FormInput';
+import PasswordInput from './PasswordInput';
+import { useFormValidation } from '../hooks/useFormValidation';
 
 const UserManagement: React.FC = () => {
     const { user: currentUser } = useAuth();
@@ -13,6 +16,10 @@ const UserManagement: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [editingUser, setEditingUser] = useState<UserDTO | null>(null);
     const [isCreating, setIsCreating] = useState(false);
+    const [saving, setSaving] = useState(false);
+
+    const createValidation = useFormValidation();
+    const editValidation = useFormValidation();
 
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(10);
@@ -168,19 +175,21 @@ const UserManagement: React.FC = () => {
     const handleCreateUser = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!validatePassword(formData.password)) {
-            notification.error('Пароль должен содержать минимум 8 символов, включая заглавные и строчные буквы, а также цифры');
+        const { isValid } = await createValidation.validateForm();
+        if (!isValid) {
             return;
         }
 
+        setSaving(true);
         try {
             await userService.create(formData);
             await loadUsers();
-            setIsCreating(false);
-            resetForm();
-            notification.success('Пользователь успешно создан')
+            handleCloseCreateModal();
+            notification.success('Пользователь успешно создан');
         } catch (err: any) {
-            notification.error(err.response?.data?.message || 'Ошибка при создании пользователя');
+            notification.error('Ошибка при создании пользователя');
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -189,13 +198,21 @@ const UserManagement: React.FC = () => {
 
         if (!editingUser) return;
 
+        const { isValid } = await editValidation.validateForm();
+        if (!isValid) {
+            return;
+        }
+
+        setSaving(true);
         try {
             await userService.update(editingUser.id, editFormData);
             await loadUsers();
-            setEditingUser(null);
-            notification.success('Пользователь успешно обновлен')
+            handleCloseEditModal();
+            notification.success('Пользователь успешно обновлен');
         } catch (err: any) {
-            notification.error(err.response?.data?.message || 'Ошибка при обновлении пользователя');
+            notification.error('Ошибка при обновлении пользователя');
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -209,9 +226,9 @@ const UserManagement: React.FC = () => {
             try {
                 await userService.delete(userId);
                 await loadUsers();
-                notification.success('Пользователь успешно удален')
+                notification.success('Пользователь успешно удален');
             } catch (err: any) {
-                notification.error(err.response?.data?.message || 'Ошибка при удалении пользователя');
+                notification.error('Ошибка при удалении пользователя');
             }
         }
     };
@@ -225,9 +242,9 @@ const UserManagement: React.FC = () => {
         try {
             await userService.changeStatus(userId, status);
             await loadUsers();
-            notification.success(`Статус пользователя изменен на ${getStatusLabel(status)}`);
+            notification.success(`Статус пользователя изменен на "${getUserStatusLabel(status)}"`);
         } catch (err: any) {
-            notification.error(err.response?.data?.message || 'Ошибка при изменении статуса');
+            notification.error('Ошибка при изменении статуса');
         }
     };
 
@@ -244,6 +261,7 @@ const UserManagement: React.FC = () => {
             role: user.role,
             status: user.status
         });
+        editValidation.resetValidation();
     };
 
     const resetForm = () => {
@@ -260,18 +278,29 @@ const UserManagement: React.FC = () => {
         });
     };
 
-    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         setFormData({
             ...formData,
             [e.target.name]: e.target.value
         });
     };
 
-    const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         setEditFormData({
             ...editFormData,
             [e.target.name]: e.target.value
         });
+    };
+
+    const handleCloseCreateModal = () => {
+        setIsCreating(false);
+        resetForm();
+        createValidation.resetValidation();
+    };
+
+    const handleCloseEditModal = () => {
+        setEditingUser(null);
+        editValidation.resetValidation();
     };
 
     const getSortIcon = (field: string) => {
@@ -314,7 +343,7 @@ const UserManagement: React.FC = () => {
                         <option value="ALL">Все роли</option>
                         <option value={UserRole.USER}>{getRoleLabel(UserRole.USER)}</option>
                         <option value={UserRole.SUPPORT}>{getRoleLabel(UserRole.SUPPORT)}</option>
-                        <option value={UserRole.ADMIN}>{getRoleLabel((UserRole.ADMIN))}</option>
+                        <option value={UserRole.ADMIN}>{getRoleLabel(UserRole.ADMIN)}</option>
                     </select>
                 </div>
                 <div className="filter-group">
@@ -342,172 +371,160 @@ const UserManagement: React.FC = () => {
                 </div>
             </div>
 
+            {/* Create user modal window */}
             {isCreating && (
-                <div className="modal-overlay" onClick={() => setIsCreating(false)}>
+                <div className="modal-overlay" onClick={handleCloseCreateModal}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
                             <h3>Создать пользователя</h3>
-                            <button
-                                className="modal-close"
-                                onClick={() => {
-                                    setIsCreating(false);
-                                    resetForm();
-                                }}
-                            >
+                            <button className="modal-close" onClick={handleCloseCreateModal} disabled={saving}>
                                 ✕
                             </button>
                         </div>
-                        <form onSubmit={handleCreateUser}>
+                        <form onSubmit={handleCreateUser} noValidate>
                             <div className="form-row">
-                                <div className="form-group">
-                                    <label>Имя *</label>
-                                    <input
-                                        type="text"
-                                        name="firstName"
-                                        value={formData.firstName}
-                                        onChange={handleFormChange}
-                                        required
-                                        className="form-control"
-                                        minLength={2}
-                                        maxLength={100}
-                                        placeholder="Иванов"
-                                    />
-                                    <small className="form-hint">
-                                        Минимум 2, максимум 100 символов
-                                    </small>
-                                </div>
-                                <div className="form-group">
-                                    <label>Фамилия *</label>
-                                    <input
-                                        type="text"
-                                        name="lastName"
-                                        value={formData.lastName}
-                                        onChange={handleFormChange}
-                                        required
-                                        className="form-control"
-                                        minLength={2}
-                                        maxLength={100}
-                                        placeholder="Иван"
-                                    />
-                                    <small className="form-hint">
-                                        Минимум 2, максимум 100 символов
-                                    </small>
-                                </div>
-                            </div>
-
-                            <div className="form-group">
-                                <label>Email *</label>
-                                <input
-                                    type="email"
-                                    name="email"
-                                    value={formData.email}
+                                <FormInput
+                                    type="text"
+                                    id="create-firstName"
+                                    name="firstName"
+                                    label="Имя"
+                                    value={formData.firstName}
                                     onChange={handleFormChange}
                                     required
-                                    className="form-control"
-                                    placeholder="user@example.com"
+                                    disabled={saving}
+                                    minLength={2}
+                                    maxLength={100}
+                                    placeholder="Иван"
+                                    forceValidate={createValidation.forceValidate}
+                                    onValidationChange={createValidation.registerFieldError}
+                                />
+                                <FormInput
+                                    type="text"
+                                    id="create-lastName"
+                                    name="lastName"
+                                    label="Фамилия"
+                                    value={formData.lastName}
+                                    onChange={handleFormChange}
+                                    required
+                                    disabled={saving}
+                                    minLength={2}
+                                    maxLength={100}
+                                    placeholder="Иванов"
+                                    forceValidate={createValidation.forceValidate}
+                                    onValidationChange={createValidation.registerFieldError}
+                                />
+                            </div>
+
+                            <FormInput
+                                type="email"
+                                id="create-email"
+                                name="email"
+                                label="Email"
+                                value={formData.email}
+                                onChange={handleFormChange}
+                                required
+                                placeholder="user@example.com"
+                                disabled={saving}
+                                rules={[validationRules.email()]}
+                                forceValidate={createValidation.forceValidate}
+                                onValidationChange={createValidation.registerFieldError}
+                            />
+
+                            <div className="form-row">
+                                <FormInput
+                                    type="text"
+                                    id="create-login"
+                                    name="login"
+                                    label="Логин"
+                                    value={formData.login}
+                                    onChange={handleFormChange}
+                                    required
+                                    disabled={saving}
+                                    minLength={3}
+                                    maxLength={50}
+                                    placeholder="user_login"
+                                    rules={[validationRules.login(), validationRules.noSpaces()]}
+                                    hint="Только буквы, цифры и подчеркивания"
+                                    forceValidate={createValidation.forceValidate}
+                                    onValidationChange={createValidation.registerFieldError}
+                                />
+                                <PasswordInput
+                                    id="create-password"
+                                    name="password"
+                                    label="Пароль"
+                                    value={formData.password}
+                                    onChange={handleFormChange}
+                                    required
+                                    disabled={saving}
+                                    autoComplete="new-password"
+                                    forceValidate={createValidation.forceValidate}
+                                    onValidationChange={createValidation.registerFieldError}
                                 />
                             </div>
 
                             <div className="form-row">
+                                <FormInput
+                                    type="tel"
+                                    id="create-phoneNumber"
+                                    name="phoneNumber"
+                                    label="Телефон"
+                                    value={formData.phoneNumber || ''}
+                                    onChange={handleFormChange}
+                                    placeholder="+7XXXXXXXXXX"
+                                    disabled={saving}
+                                    rules={[validationRules.phone()]}
+                                    forceValidate={createValidation.forceValidate}
+                                    onValidationChange={createValidation.registerFieldError}
+                                />
                                 <div className="form-group">
-                                    <label>Логин *</label>
-                                    <input
-                                        type="text"
-                                        name="login"
-                                        value={formData.login}
-                                        onChange={handleFormChange}
-                                        required
-                                        pattern="^[a-zA-Z0-9_]+$"
-                                        className="form-control"
-                                        minLength={3}
-                                        maxLength={50}
-                                        placeholder="user_login"
-                                    />
-                                    <small className="form-hint">
-                                        Минимум 3, максимум 50 символов, только буквы, цифры и подчеркивания
-                                    </small>
-                                </div>
-                                <div className="form-group">
-                                    <label>Пароль *</label>
-                                    <input
-                                        type="password"
-                                        name="password"
-                                        value={formData.password}
-                                        onChange={handleFormChange}
-                                        required
-                                        minLength={8}
-                                        className="form-control"
-                                        placeholder="••••••••"
-                                    />
-                                    <small className="form-hint">
-                                        Минимум 8 символов, заглавные и строчные буквы, цифры
-                                    </small>
-                                </div>
-                            </div>
-
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label>Телефон</label>
-                                    <input
-                                        type="tel"
-                                        name="phoneNumber"
-                                        value={formData.phoneNumber}
-                                        onChange={handleFormChange}
-                                        className="form-control"
-                                        pattern="^$|^\+?[1-9]\d{0,10}$"
-                                        placeholder="+7XXXXXXXXXX"
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label>Роль *</label>
+                                    <label htmlFor="create-role">
+                                        Роль
+                                    </label>
                                     <select
+                                        id="create-role"
                                         name="role"
                                         value={formData.role}
                                         onChange={handleFormChange}
                                         className="form-control"
+                                        disabled={saving}
                                     >
                                         <option value={UserRole.USER}>{getRoleLabel(UserRole.USER)}</option>
                                         <option value={UserRole.SUPPORT}>{getRoleLabel(UserRole.SUPPORT)}</option>
-                                        <option value={UserRole.ADMIN}>{getRoleLabel((UserRole.ADMIN))}</option>
+                                        <option value={UserRole.ADMIN}>{getRoleLabel(UserRole.ADMIN)}</option>
                                     </select>
                                 </div>
                             </div>
 
                             <div className="form-row">
-                                <div className="form-group">
-                                    <label>Отдел</label>
-                                    <input
-                                        type="text"
-                                        name="department"
-                                        value={formData.department}
-                                        onChange={handleFormChange}
-                                        className="form-control"
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label>Должность</label>
-                                    <input
-                                        type="text"
-                                        name="position"
-                                        value={formData.position}
-                                        onChange={handleFormChange}
-                                        className="form-control"
-                                    />
-                                </div>
+                                <FormInput
+                                    type="text"
+                                    id="create-department"
+                                    name="department"
+                                    label="Отдел"
+                                    value={formData.department || ''}
+                                    onChange={handleFormChange}
+                                    disabled={saving}
+                                    forceValidate={createValidation.forceValidate}
+                                    onValidationChange={createValidation.registerFieldError}
+                                />
+                                <FormInput
+                                    type="text"
+                                    id="create-position"
+                                    name="position"
+                                    label="Должность"
+                                    value={formData.position || ''}
+                                    onChange={handleFormChange}
+                                    disabled={saving}
+                                    forceValidate={createValidation.forceValidate}
+                                    onValidationChange={createValidation.registerFieldError}
+                                />
                             </div>
 
                             <div className="modal-actions">
-                                <button type="submit" className="btn btn-primary">
-                                    Создать
+                                <button type="submit" className="btn btn-primary" disabled={saving}>
+                                    {saving ? 'Создание...' : 'Создать'}
                                 </button>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setIsCreating(false);
-                                        resetForm();
-                                    }}
-                                    className="btn btn-secondary"
-                                >
+                                <button type="button" onClick={handleCloseCreateModal} className="btn btn-secondary" disabled={saving}>
                                     Отмена
                                 </button>
                             </div>
@@ -516,164 +533,170 @@ const UserManagement: React.FC = () => {
                 </div>
             )}
 
+            {/* Edit user modal window */}
             {editingUser && (
-                <div className="modal-overlay" onClick={() => setEditingUser(null)}>
+                <div className="modal-overlay" onClick={handleCloseEditModal}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
                             <h3>Редактировать пользователя</h3>
-                            <button
-                                className="modal-close"
-                                onClick={() => setEditingUser(null)}
-                            >
+                            <button className="modal-close" onClick={handleCloseEditModal} disabled={saving}>
                                 ✕
                             </button>
                         </div>
-                        <form onSubmit={handleUpdateUser}>
+                        <form onSubmit={handleUpdateUser} noValidate>
                             <div className="form-row">
-                                <div className="form-group">
-                                    <label>Имя *</label>
-                                    <input
-                                        type="text"
-                                        name="firstName"
-                                        value={editFormData.firstName}
-                                        onChange={handleEditFormChange}
-                                        required
-                                        className="form-control"
-                                        minLength={2}
-                                        maxLength={100}
-                                        placeholder="Иван"
-                                    />
-                                    <small className="form-hint">
-                                        Минимум 2, максимум 100 символов
-                                    </small>
-                                </div>
-                                <div className="form-group">
-                                    <label>Фамилия *</label>
-                                    <input
-                                        type="text"
-                                        name="lastName"
-                                        value={editFormData.lastName}
-                                        onChange={handleEditFormChange}
-                                        required
-                                        className="form-control"
-                                        minLength={2}
-                                        maxLength={100}
-                                        placeholder="Иванов"
-                                    />
-                                    <small className="form-hint">
-                                        Минимум 2, максимум 100 символов
-                                    </small>
-                                </div>
-                            </div>
-
-                            <div className="form-group">
-                                <label>Email *</label>
-                                <input
-                                    type="email"
-                                    name="email"
-                                    value={editFormData.email}
-                                    onChange={handleEditFormChange}
-                                    required
-                                    className="form-control"
-                                    placeholder="user@example.com"
-                                />
-                            </div>
-
-                            <div className="form-group">
-                                <label>Логин *</label>
-                                <input
+                                <FormInput
                                     type="text"
-                                    name="login"
-                                    value={editFormData.login}
+                                    id="edit-firstName"
+                                    name="firstName"
+                                    label="Имя"
+                                    value={editFormData.firstName || ''}
                                     onChange={handleEditFormChange}
                                     required
-                                    pattern="^[a-zA-Z0-9_]+$"
-                                    className="form-control"
-                                    minLength={3}
-                                    maxLength={50}
-                                    placeholder="user_login"
+                                    disabled={saving}
+                                    minLength={2}
+                                    maxLength={100}
+                                    placeholder="Иван"
+                                    forceValidate={editValidation.forceValidate}
+                                    onValidationChange={editValidation.registerFieldError}
                                 />
-                                <small className="form-hint">
-                                    Минимум 3, максимум 50 символов, только буквы, цифры и подчеркивания
-                                </small>
+                                <FormInput
+                                    type="text"
+                                    id="edit-lastName"
+                                    name="lastName"
+                                    label="Фамилия"
+                                    value={editFormData.lastName || ''}
+                                    onChange={handleEditFormChange}
+                                    required
+                                    disabled={saving}
+                                    minLength={2}
+                                    maxLength={100}
+                                    placeholder="Иванов"
+                                    forceValidate={editValidation.forceValidate}
+                                    onValidationChange={editValidation.registerFieldError}
+                                />
                             </div>
 
+                            <FormInput
+                                type="email"
+                                id="edit-email"
+                                name="email"
+                                label="Email"
+                                value={editFormData.email || ''}
+                                onChange={handleEditFormChange}
+                                required
+                                placeholder="user@example.com"
+                                disabled={saving}
+                                rules={[validationRules.email()]}
+                                forceValidate={editValidation.forceValidate}
+                                onValidationChange={editValidation.registerFieldError}
+                            />
+
+                            <FormInput
+                                type="text"
+                                id="edit-login"
+                                name="login"
+                                label="Логин"
+                                value={editFormData.login || ''}
+                                onChange={handleEditFormChange}
+                                required
+                                disabled={saving}
+                                minLength={3}
+                                maxLength={50}
+                                placeholder="user_login"
+                                rules={[validationRules.login(), validationRules.noSpaces()]}
+                                hint="Только буквы, цифры и подчеркивания"
+                                forceValidate={editValidation.forceValidate}
+                                onValidationChange={editValidation.registerFieldError}
+                            />
+
                             <div className="form-row">
+                                <FormInput
+                                    type="tel"
+                                    id="edit-phoneNumber"
+                                    name="phoneNumber"
+                                    label="Телефон"
+                                    value={editFormData.phoneNumber || ''}
+                                    onChange={handleEditFormChange}
+                                    placeholder="+7XXXXXXXXXX"
+                                    disabled={saving}
+                                    rules={[validationRules.phone()]}
+                                    forceValidate={editValidation.forceValidate}
+                                    onValidationChange={editValidation.registerFieldError}
+                                />
                                 <div className="form-group">
-                                    <label>Телефон</label>
-                                    <input
-                                        type="tel"
-                                        name="phoneNumber"
-                                        value={editFormData.phoneNumber}
-                                        onChange={handleEditFormChange}
-                                        className="form-control"
-                                        pattern="^$|^\+?[1-9]\d{0,10}$"
-                                        placeholder="+7XXXXXXXXXX"
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label>Роль *</label>
+                                    <label htmlFor="edit-role">
+                                        Роль
+                                    </label>
                                     <select
+                                        id="edit-role"
                                         name="role"
                                         value={editFormData.role}
                                         onChange={handleEditFormChange}
                                         className="form-control"
-                                        disabled={editingUser.id === currentUser?.id}
+                                        disabled={saving || editingUser.id === currentUser?.id}
                                     >
                                         <option value={UserRole.USER}>{getRoleLabel(UserRole.USER)}</option>
                                         <option value={UserRole.SUPPORT}>{getRoleLabel(UserRole.SUPPORT)}</option>
-                                        <option value={UserRole.ADMIN}>{getRoleLabel((UserRole.ADMIN))}</option>
+                                        <option value={UserRole.ADMIN}>{getRoleLabel(UserRole.ADMIN)}</option>
                                     </select>
+                                    {editingUser.id === currentUser?.id && (
+                                        <span className="form-hint">Нельзя изменить свою роль</span>
+                                    )}
                                 </div>
                             </div>
 
                             <div className="form-row">
-                                <div className="form-group">
-                                    <label>Отдел</label>
-                                    <input
-                                        type="text"
-                                        name="department"
-                                        value={editFormData.department}
-                                        onChange={handleEditFormChange}
-                                        className="form-control"
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label>Должность</label>
-                                    <input
-                                        type="text"
-                                        name="position"
-                                        value={editFormData.position}
-                                        onChange={handleEditFormChange}
-                                        className="form-control"
-                                    />
-                                </div>
+                                <FormInput
+                                    type="text"
+                                    id="edit-department"
+                                    name="department"
+                                    label="Отдел"
+                                    value={editFormData.department || ''}
+                                    onChange={handleEditFormChange}
+                                    disabled={saving}
+                                    forceValidate={editValidation.forceValidate}
+                                    onValidationChange={editValidation.registerFieldError}
+                                />
+                                <FormInput
+                                    type="text"
+                                    id="edit-position"
+                                    name="position"
+                                    label="Должность"
+                                    value={editFormData.position || ''}
+                                    onChange={handleEditFormChange}
+                                    disabled={saving}
+                                    forceValidate={editValidation.forceValidate}
+                                    onValidationChange={editValidation.registerFieldError}
+                                />
                             </div>
 
                             <div className="form-group">
-                                <label>Статус *</label>
+                                <label htmlFor="status">
+                                    Статус
+                                </label>
                                 <select
+                                    id="edit-status"
                                     name="status"
                                     value={editFormData.status}
                                     onChange={handleEditFormChange}
                                     className="form-control"
-                                    disabled={editingUser.id === currentUser?.id}
+                                    disabled={saving || editingUser.id === currentUser?.id}
                                 >
                                     <option value={UserStatus.ACTIVE}>{getUserStatusLabel(UserStatus.ACTIVE)}</option>
                                     <option value={UserStatus.INACTIVE}>{getUserStatusLabel(UserStatus.INACTIVE)}</option>
                                     <option value={UserStatus.SUSPENDED}>{getUserStatusLabel(UserStatus.SUSPENDED)}</option>
                                 </select>
+                                {editingUser.id === currentUser?.id && (
+                                    <span className="form-hint">Нельзя изменить свой статус</span>
+                                )}
                             </div>
 
                             <div className="modal-actions">
-                                <button type="submit" className="btn btn-primary">
-                                    Сохранить
+                                <button type="submit" className="btn btn-primary" disabled={saving}>
+                                    {saving ? 'Сохранение...' : 'Сохранить'}
                                 </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setEditingUser(null)}
-                                    className="btn btn-secondary"
-                                >
+                                <button type="button" onClick={handleCloseEditModal} className="btn btn-secondary" disabled={saving}>
                                     Отмена
                                 </button>
                             </div>
@@ -689,10 +712,7 @@ const UserManagement: React.FC = () => {
                     {hasActiveFilters ? (
                         <>
                             <p>По заданным фильтрам не найдено ни одного пользователя.</p>
-                            <button
-                                onClick={handleResetFilters}
-                                className="btn btn-primary"
-                            >
+                            <button onClick={handleResetFilters} className="btn btn-primary">
                                 Сбросить фильтры
                             </button>
                         </>

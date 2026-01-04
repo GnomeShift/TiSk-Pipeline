@@ -10,7 +10,7 @@ declare global {
 }
 
 const isValidValue = (value: string | undefined): value is string => {
-    return Boolean(value && !value.startsWith('${'));
+    return Boolean(value && !value.startsWith('${') && value !== 'undefined');
 };
 
 export const env = {

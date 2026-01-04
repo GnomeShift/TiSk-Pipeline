@@ -2,14 +2,17 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { RegisterDTO } from '../types/auth';
-import { validatePassword } from '../services/utils'
 import { useNotification } from '../contexts/NotificationContext';
+import FormInput, { validationRules } from './FormInput';
+import PasswordInput from './PasswordInput';
+import { useFormValidation } from '../hooks/useFormValidation';
 
 const Register: React.FC = () => {
     const navigate = useNavigate();
     const { register } = useAuth();
     const notification = useNotification();
     const [loading, setLoading] = useState(false);
+    const { forceValidate, registerFieldError, validateForm } = useFormValidation();
 
     const [formData, setFormData] = useState<RegisterDTO & { confirmPassword: string }>({
         email: '',
@@ -23,7 +26,7 @@ const Register: React.FC = () => {
         position: ''
     });
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormData({
             ...formData,
             [e.target.name]: e.target.value
@@ -33,13 +36,8 @@ const Register: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (formData.password !== formData.confirmPassword) {
-            notification.error('Пароли не совпадают');
-            return;
-        }
-
-        if (!validatePassword(formData.password)) {
-            notification.error('Пароль должен содержать минимум 8 символов, включая заглавные и строчные буквы, а также цифры');
+        const { isValid } = await validateForm();
+        if (!isValid) {
             return;
         }
 
@@ -61,153 +59,143 @@ const Register: React.FC = () => {
             <div className="auth-card auth-card-wide">
                 <h2 className="auth-title">Регистрация</h2>
 
-                <form onSubmit={handleSubmit} className="auth-form">
+                <form onSubmit={handleSubmit} className="auth-form" noValidate>
                     <div className="form-row">
-                        <div className="form-group">
-                            <label htmlFor="firstName">Имя *</label>
-                            <input
-                                type="text"
-                                id="firstName"
-                                name="firstName"
-                                value={formData.firstName}
-                                onChange={handleChange}
-                                required
-                                className="form-control"
-                                minLength={2}
-                                maxLength={100}
-                                placeholder="Иван"
-                            />
-                            <small className="form-hint">
-                                Минимум 2, максимум 100 символов
-                            </small>
-                        </div>
-
-                        <div className="form-group">
-                            <label htmlFor="lastName">Фамилия *</label>
-                            <input
-                                type="text"
-                                id="lastName"
-                                name="lastName"
-                                value={formData.lastName}
-                                onChange={handleChange}
-                                required
-                                className="form-control"
-                                minLength={2}
-                                maxLength={100}
-                                placeholder="Иванов"
-                            />
-                            <small className="form-hint">
-                                Минимум 2, максимум 100 символов
-                            </small>
-                        </div>
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="email">Email *</label>
-                        <input
-                            type="email"
-                            id="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            required
-                            className="form-control"
-                            placeholder="user@example.com"
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="login">Логин *</label>
-                        <input
+                        <FormInput
                             type="text"
-                            id="login"
-                            name="login"
-                            value={formData.login}
+                            id="firstName"
+                            name="firstName"
+                            label="Имя"
+                            value={formData.firstName}
                             onChange={handleChange}
                             required
-                            className="form-control"
-                            pattern="^[a-zA-Z0-9_]+$"
-                            minLength={3}
-                            maxLength={50}
-                            placeholder="user_login"
+                            disabled={loading}
+                            minLength={2}
+                            maxLength={100}
+                            placeholder="Иван"
+                            forceValidate={forceValidate}
+                            onValidationChange={registerFieldError}
                         />
-                        <small className="form-hint">
-                            Минимум 3, максимум 50 символов, только буквы, цифры и подчеркивания
-                        </small>
-                    </div>
 
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label htmlFor="password">Пароль *</label>
-                            <input
-                                type="password"
-                                id="password"
-                                name="password"
-                                value={formData.password}
-                                onChange={handleChange}
-                                required
-                                className="form-control"
-                                minLength={8}
-                                placeholder="••••••••"
-                            />
-                            <small className="form-hint">
-                                Минимум 8 символов, заглавные и строчные буквы, цифры
-                            </small>
-                        </div>
-
-                        <div className="form-group">
-                            <label htmlFor="confirmPassword">Подтвердите пароль *</label>
-                            <input
-                                type="password"
-                                id="confirmPassword"
-                                name="confirmPassword"
-                                value={formData.confirmPassword}
-                                onChange={handleChange}
-                                required
-                                className="form-control"
-                                placeholder="••••••••"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="phoneNumber">Телефон</label>
-                        <input
-                            type="tel"
-                            id="phoneNumber"
-                            name="phoneNumber"
-                            value={formData.phoneNumber}
+                        <FormInput
+                            type="text"
+                            id="lastName"
+                            name="lastName"
+                            label="Фамилия"
+                            value={formData.lastName}
                             onChange={handleChange}
-                            className="form-control"
-                            pattern="^$|^\+?[1-9]\d{0,10}$"
-                            placeholder="+7XXXXXXXXXX"
+                            required
+                            disabled={loading}
+                            minLength={2}
+                            maxLength={100}
+                            placeholder="Иванов"
+                            forceValidate={forceValidate}
+                            onValidationChange={registerFieldError}
                         />
                     </div>
 
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label htmlFor="department">Отдел</label>
-                            <input
-                                type="text"
-                                id="department"
-                                name="department"
-                                value={formData.department}
-                                onChange={handleChange}
-                                className="form-control"
-                            />
-                        </div>
+                    <FormInput
+                        type="email"
+                        id="email"
+                        name="email"
+                        label="Email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        required
+                        placeholder="user@example.com"
+                        disabled={loading}
+                        rules={[validationRules.email()]}
+                        forceValidate={forceValidate}
+                        onValidationChange={registerFieldError}
+                    />
 
-                        <div className="form-group">
-                            <label htmlFor="position">Должность</label>
-                            <input
-                                type="text"
-                                id="position"
-                                name="position"
-                                value={formData.position}
-                                onChange={handleChange}
-                                className="form-control"
-                            />
-                        </div>
+                    <FormInput
+                        type="text"
+                        id="login"
+                        name="login"
+                        label="Логин"
+                        value={formData.login}
+                        onChange={handleChange}
+                        required
+                        disabled={loading}
+                        minLength={3}
+                        maxLength={50}
+                        placeholder="user_login"
+                        rules={[
+                            validationRules.login(),
+                            validationRules.noSpaces()
+                        ]}
+                        hint="Только буквы, цифры и подчеркивания"
+                        forceValidate={forceValidate}
+                        onValidationChange={registerFieldError}
+                    />
+
+                    <PasswordInput
+                        id="password"
+                        name="password"
+                        label="Пароль"
+                        value={formData.password}
+                        onChange={handleChange}
+                        required
+                        disabled={loading}
+                        autoComplete="new-password"
+                        forceValidate={forceValidate}
+                        onValidationChange={registerFieldError}
+                    />
+
+                    <FormInput
+                        type="password"
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        label="Подтвердите пароль"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        required
+                        placeholder="••••••••"
+                        disabled={loading}
+                        rules={[validationRules.match(() => formData.password, 'Пароли')]}
+                        forceValidate={forceValidate}
+                        onValidationChange={registerFieldError}
+                    />
+
+                    <FormInput
+                        type="tel"
+                        id="phoneNumber"
+                        name="phoneNumber"
+                        label="Телефон"
+                        value={formData.phoneNumber || ''}
+                        onChange={handleChange}
+                        placeholder="+7XXXXXXXXXX"
+                        disabled={loading}
+                        rules={[validationRules.phone()]}
+                        forceValidate={forceValidate}
+                        onValidationChange={registerFieldError}
+                    />
+
+                    <div className="form-row">
+                        <FormInput
+                            type="text"
+                            id="department"
+                            name="department"
+                            label="Отдел"
+                            value={formData.department || ''}
+                            onChange={handleChange}
+                            disabled={loading}
+                            forceValidate={forceValidate}
+                            onValidationChange={registerFieldError}
+                        />
+
+                        <FormInput
+                            type="text"
+                            id="position"
+                            name="position"
+                            label="Должность"
+                            value={formData.position || ''}
+                            onChange={handleChange}
+                            disabled={loading}
+                            forceValidate={forceValidate}
+                            onValidationChange={registerFieldError}
+                        />
                     </div>
 
                     <button

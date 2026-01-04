@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { statisticsService } from '../services/statisticsService';
 import { TicketStatisticsDTO, AssigneeStatisticsDTO, PeriodStatisticsDTO } from '../types/statistics';
 import { useNotification } from '../contexts/NotificationContext';
 import { getStatusColor, getStatusLabel} from '../services/utils';
 import { UserRole } from '../types/user';
 import { useAuth } from '../contexts/AuthContext';
+
+type TabType = 'overview' | 'assignees' | 'trends';
 
 const Statistics: React.FC = () => {
     const { user } = useAuth();
@@ -15,13 +17,9 @@ const Statistics: React.FC = () => {
     const [assigneesStats, setAssigneesStats] = useState<AssigneeStatisticsDTO[]>([]);
     const [periodStats, setPeriodStats] = useState<PeriodStatisticsDTO | null>(null);
     const [selectedPeriod, setSelectedPeriod] = useState<number>(7);
-    const [activeTab, setActiveTab] = useState<'overview' | 'assignees' | 'trends'>('overview');
+    const [activeTab, setActiveTab] = useState<TabType>('overview');
 
-    useEffect(() => {
-        loadStatistics();
-    }, [selectedPeriod])
-
-    const loadStatistics = async () => {
+    const loadStatistics = useCallback(async () => {
         try {
             setLoading(true);
 
@@ -42,18 +40,63 @@ const Statistics: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [selectedPeriod, notification]);
 
-    const formatTime = (hours: number | null): string => {
+    useEffect(() => {
+        loadStatistics();
+    }, [loadStatistics]);
+
+    const formatTime = useCallback((hours: number | null): string => {
         if (hours === null || hours === undefined) return '—';
         if (hours < 1) return `${Math.round(hours * 60)} мин`;
         if (hours < 24) return `${hours.toFixed(1)} ч`;
         return `${Math.floor(hours / 24)} д ${Math.round(hours % 24)} ч`;
-    };
+    }, []);
 
-    const getMaxValue = (data: Record<string, number>): number => {
+    const getMaxValue = useCallback((data: Record<string, number>): number => {
         return Math.max(...Object.values(data), 1);
-    };
+    }, []);
+
+    // Memoize pie chart
+    const pieChartStyle = useMemo(() => {
+        if (!allStats) return {};
+
+        return {
+            background: `conic-gradient(
+                ${getStatusColor.OPEN} 0% ${allStats.openPercentage}%,
+                ${getStatusColor.IN_PROGRESS} ${allStats.openPercentage}% ${allStats.openPercentage + allStats.inProgressPercentage}%,
+                ${getStatusColor.CLOSED} ${allStats.openPercentage + allStats.inProgressPercentage}% 100%
+            )`
+        };
+    }, [allStats]);
+
+    // Memoize top assignees
+    const topPerformers = useMemo(() => {
+        return [...assigneesStats]
+            .sort((a, b) => b.closedTickets - a.closedTickets)
+            .slice(0, 5);
+    }, [assigneesStats]);
+
+    // Memoize daily max value
+    const maxDailyValue = useMemo(() => {
+        if (!periodStats) return 1;
+        return Math.max(
+            ...periodStats.dailyStatistics.map(d => Math.max(d.created, d.closed)),
+            1
+        );
+    }, [periodStats]);
+
+    const handleTabChange = useCallback((tab: TabType) => {
+        setActiveTab(tab);
+    }, []);
+
+    const handlePeriodChange = useCallback((period: number) => {
+        setSelectedPeriod(period);
+    }, []);
+
+    const handleRefresh = useCallback(() => {
+        loadStatistics();
+    }, [loadStatistics]);
 
     if (loading) return <div className="loading"></div>;
 
@@ -69,32 +112,37 @@ const Statistics: React.FC = () => {
         <div className="statistics-page">
             <div className="stats-header">
                 <h2>Статистика</h2>
-                <button className="btn btn-secondary" onClick={loadStatistics}>
-                    Обновить
+                <button
+                    className="btn btn-secondary"
+                    onClick={handleRefresh}
+                    disabled={loading}
+                >
+                    {loading ? 'Загрузка...' : 'Обновить'}
                 </button>
             </div>
 
             <div className="stats-tabs">
                 <button
                     className={`stats-tab ${activeTab === 'overview' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('overview')}
+                    onClick={() => handleTabChange('overview')}
                 >
                     Обзор
                 </button>
                 <button
                     className={`stats-tab ${activeTab === 'assignees' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('assignees')}
+                    onClick={() => handleTabChange('assignees')}
                 >
                     Исполнители
                 </button>
                 <button
                     className={`stats-tab ${activeTab === 'trends' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('trends')}
+                    onClick={() => handleTabChange('trends')}
                 >
                     Динамика
                 </button>
             </div>
 
+            {/* Overview tab */}
             {activeTab === 'overview' && (
                 <>
                     <div className="stats-cards">
@@ -202,16 +250,7 @@ const Statistics: React.FC = () => {
                             </div>
 
                             <div className="pie-chart-container">
-                                <div
-                                    className="pie-chart"
-                                    style={{
-                                        background: `conic-gradient(
-                                            ${getStatusColor.OPEN} 0% ${allStats.openPercentage}%,
-                                            ${getStatusColor.IN_PROGRESS} ${allStats.openPercentage}% ${allStats.openPercentage + allStats.inProgressPercentage}%,
-                                            ${getStatusColor.CLOSED} ${allStats.openPercentage + allStats.inProgressPercentage}% 100%
-                                        )`
-                                    }}
-                                >
+                                <div className="pie-chart" style={pieChartStyle}>
                                     <div className="pie-center">
                                         <div className="pie-total">{allStats.totalTickets}</div>
                                         <div className="pie-label">всего</div>
@@ -237,6 +276,7 @@ const Statistics: React.FC = () => {
                 </>
             )}
 
+            {/* Assignees tab */}
             {activeTab === 'assignees' && (
                 <div className="assignee-stats">
                     <h3>Статистика по исполнителям</h3>
@@ -307,23 +347,20 @@ const Statistics: React.FC = () => {
                         <div className="top-performers">
                             <h4>🏆 Топ сотрудников</h4>
                             <div className="top-list">
-                                {assigneesStats
-                                    .sort((a, b) => b.closedTickets - a.closedTickets)
-                                    .slice(0, 5)
-                                    .map((assignee, index) => (
-                                        <div key={assignee.assigneeId} className="top-item">
-                                            <div className={`top-rank rank-${index + 1}`}>
-                                                {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
-                                            </div>
-                                            <div className="top-info">
-                                                <div className="top-name">{assignee.firstName} {assignee.lastName}</div>
-                                                <div className="top-stats">
-                                                    {assignee.closedTickets} закрытых из {assignee.totalAssigned}
-                                                </div>
-                                            </div>
-                                            <div className="top-score">{assignee.closedTickets}</div>
+                                {topPerformers.map((assignee, index) => (
+                                    <div key={assignee.assigneeId} className="top-item">
+                                        <div className={`top-rank rank-${index + 1}`}>
+                                            {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
                                         </div>
-                                    ))}
+                                        <div className="top-info">
+                                            <div className="top-name">{assignee.firstName} {assignee.lastName}</div>
+                                            <div className="top-stats">
+                                                {assignee.closedTickets} закрытых из {assignee.totalAssigned}
+                                            </div>
+                                        </div>
+                                        <div className="top-score">{assignee.closedTickets}</div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     )}
@@ -337,37 +374,37 @@ const Statistics: React.FC = () => {
                         <div className="period-selector">
                             <button
                                 className={`period-btn ${selectedPeriod === 7 ? 'active' : ''}`}
-                                onClick={() => setSelectedPeriod(7)}
+                                onClick={() => handlePeriodChange(7)}
                             >
                                 7 дней
                             </button>
                             <button
                                 className={`period-btn ${selectedPeriod === 14 ? 'active' : ''}`}
-                                onClick={() => setSelectedPeriod(14)}
+                                onClick={() => handlePeriodChange(14)}
                             >
                                 14 дней
                             </button>
                             <button
                                 className={`period-btn ${selectedPeriod === 30 ? 'active' : ''}`}
-                                onClick={() => setSelectedPeriod(30)}
+                                onClick={() => handlePeriodChange(30)}
                             >
                                 1 месяц
                             </button>
                             <button
                                 className={`period-btn ${selectedPeriod === 90 ? 'active' : ''}`}
-                                onClick={() => setSelectedPeriod(90)}
+                                onClick={() => handlePeriodChange(90)}
                             >
                                 3 месяца
                             </button>
                             <button
                                 className={`period-btn ${selectedPeriod === 180 ? 'active' : ''}`}
-                                onClick={() => setSelectedPeriod(180)}
+                                onClick={() => handlePeriodChange(180)}
                             >
                                 полгода
                             </button>
                             <button
                                 className={`period-btn ${selectedPeriod === 365 ? 'active' : ''}`}
-                                onClick={() => setSelectedPeriod(365)}
+                                onClick={() => handlePeriodChange(365)}
                             >
                                 год
                             </button>
@@ -396,12 +433,8 @@ const Statistics: React.FC = () => {
                             <div className="line-chart-container">
                                 <div className="line-chart">
                                     {periodStats.dailyStatistics.map((day) => {
-                                        const maxVal = Math.max(
-                                            ...periodStats.dailyStatistics.map(d => Math.max(d.created, d.closed)),
-                                            1
-                                        );
-                                        const createdHeight = (day.created / maxVal) * 100;
-                                        const closedHeight = (day.closed / maxVal) * 100;
+                                        const createdHeight = (day.created / maxDailyValue) * 100;
+                                        const closedHeight = (day.closed / maxDailyValue) * 100;
 
                                         return (
                                             <div key={day.date} className="chart-day">
@@ -474,9 +507,9 @@ const Statistics: React.FC = () => {
                                                 <span className="text-primary">✓{day.closed}</span>
                                             </td>
                                             <td>
-                                                    <span className={day.created > day.closed ? 'text-warning' : 'text-success'}>
-                                                        {day.created - day.closed > 0 ? '+' : ''}{day.created - day.closed}
-                                                    </span>
+                                                <span className={day.created > day.closed ? 'text-warning' : 'text-success'}>
+                                                    {day.created - day.closed > 0 ? '+' : ''}{day.created - day.closed}
+                                                </span>
                                             </td>
                                         </tr>
                                     ))}
