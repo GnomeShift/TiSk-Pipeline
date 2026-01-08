@@ -13,7 +13,15 @@ public class DotenvPropertyInitializer implements ApplicationContextInitializer<
     @Override
     public void initialize(ConfigurableApplicationContext applicationContext) {
         ConfigurableEnvironment environment = applicationContext.getEnvironment();
+
+        // Get first active profile
         String activeProfile = environment.getActiveProfiles()[0];
+
+        // If profile is undefined - exit
+        if (activeProfile == null || activeProfile.isBlank()) {
+            return;
+        }
+
         String dotenvFile = ".env." + activeProfile;
 
         Dotenv dotenv = Dotenv.configure()
@@ -21,11 +29,17 @@ public class DotenvPropertyInitializer implements ApplicationContextInitializer<
                 .ignoreIfMissing()
                 .load();
 
+        // If dotenv is empty - exit
+        if (dotenv.entries().isEmpty()) {
+            return;
+        }
+
         Map<String, Object> vars = new HashMap<>();
         dotenv.entries().forEach(entry ->
                 vars.put(entry.getKey(), entry.getValue())
         );
 
+        // Add at first
         environment.getPropertySources().addFirst(new MapPropertySource("dotenvProperties", vars));
     }
 }
