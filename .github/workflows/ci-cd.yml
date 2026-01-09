@@ -322,9 +322,18 @@ jobs:
             echo "**Tag:** ${{ needs.release.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "### 🐳 Docker images" >> $GITHUB_STEP_SUMMARY
-            echo "- Backend: \`${{ env.BACKEND_IMAGE }}:${{ needs.release.outputs.version }}\` (+ latest/sha)" >> $GITHUB_STEP_SUMMARY
-            echo "- Frontend: \`${{ env.FRONTEND_IMAGE }}:${{ needs.release.outputs.version }}\` (+ latest/sha)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Backend:**" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "docker pull ${{ env.BACKEND_IMAGE }}:${{ needs.release.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+            echo "docker pull ${{ env.BACKEND_IMAGE }}:latest" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Frontend:**" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "docker pull ${{ env.FRONTEND_IMAGE }}:${{ needs.release.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+            echo "docker pull ${{ env.FRONTEND_IMAGE }}:latest" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           else
-            echo "### ℹ️ No release created in this run" >> $GITHUB_STEP_SUMMARY
-            echo "Release-please мог создать/обновить release PR, но релиз не был опубликован — Docker билд корректно пропущен." >> $GITHUB_STEP_SUMMARY
+            echo "### ℹ️ No release action needed" >> $GITHUB_STEP_SUMMARY
           fi
