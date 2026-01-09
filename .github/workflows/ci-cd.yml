@@ -26,6 +26,9 @@ jobs:
   # TESTS (PR + PUSH)
   test:
     name: 🧪 Tests
+    if: |
+      github.event_name == 'pull_request' && 
+      github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -66,6 +69,9 @@ jobs:
   # SECURITY SCAN (PR + push)
   security-scan:
     name: 🔒 Security scan
+    if: |
+      github.event_name == 'pull_request' && 
+      github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -99,7 +105,6 @@ jobs:
   # RELEASE PLEASE (Push)
   release:
     name: 📦 Release Please
-    needs: [test, security-scan]
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     outputs:
@@ -172,15 +177,7 @@ jobs:
             VCS_REF=${{ github.sha }}
             VERSION=${{ needs.release.outputs.version }}
 
-      - name: Generate SBOM
-        uses: anchore/sbom-action@v0
-        with:
-          image: ${{ env.BACKEND_IMAGE }}:${{ needs.release.outputs.version }}
-          artifact-name: sbom-backend.spdx.json
-
-  # ════════════════════════════════════════════════════════════════════════════
-  # 🐳 DOCKER FRONTEND — только при создании релиза
-  # ════════════════════════════════════════════════════════════════════════════
+  # BUILD AND PUSH FRONTEND
   docker-frontend:
     name: 🐳 Docker Frontend
     needs: [release]
@@ -234,17 +231,11 @@ jobs:
             VCS_REF=${{ github.sha }}
             VERSION=${{ needs.release.outputs.version }}
 
-      - name: Generate SBOM
-        uses: anchore/sbom-action@v0
-        with:
-          image: ${{ env.FRONTEND_IMAGE }}:${{ needs.release.outputs.version }}
-          artifact-name: sbom-frontend.spdx.json
-
-  # SUMMARY (push)
+  # SUMMARY (Push)
   summary:
     name: 📋 Pipeline
-    needs: [test, security-scan, release, docker-backend, docker-frontend]
-    if: always() && github.event_name != 'pull_request'
+    needs: [release, docker-backend, docker-frontend]
+    if: always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     steps:
       - name: Generate summary
@@ -283,8 +274,3 @@ jobs:
             echo "docker pull ${{ env.FRONTEND_IMAGE }}:latest" >> $GITHUB_STEP_SUMMARY
             echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           fi
-          
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "---" >> $GITHUB_STEP_SUMMARY
-          echo "📝 **Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "🔗 **Workflow:** [Run #${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
