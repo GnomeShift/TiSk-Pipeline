@@ -292,8 +292,8 @@ jobs:
           echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
 
           test_status="${{ needs.test.result }}"
-          scan_status="${{ needs.security-scan.result }}"
-          codeql_status="${{ needs.code-scan.result }}"
+          scan_status="${{ needs.codeql-scan.result }}"
+          codeql_status="${{ needs.trivyscan.result }}"
           release_status="${{ needs.release.result }}"
           backend_status="${{ needs.docker-backend.result }}"
           frontend_status="${{ needs.docker-frontend.result }}"
