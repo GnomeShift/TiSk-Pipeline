@@ -66,8 +66,8 @@ jobs:
             build/test-results/
           retention-days: 14
 
-  # CODE SCAN (SAST) — CodeQL
-  code-scan:
+  # CodeQL SCAN (SAST)
+  codeql-scan:
     name: 🧬 Code scan (CodeQL)
     runs-on: ubuntu-latest
     permissions:
@@ -101,9 +101,9 @@ jobs:
         with:
           category: "/language:${{ matrix.language }}"
 
-  # SECURITY SCAN (Trivy FS -> SARIF)
-  security-scan:
-    name: 🔒 Security scan (Trivy FS)
+  # Trivy SCAN (FS)
+  trivy-scan:
+    name: 🦑 Code scan (Trivy FS)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -113,16 +113,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Cache Trivy DB
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/trivy
-          key: trivy-${{ runner.os }}-${{ github.workflow }}-${{ github.sha }}
-          restore-keys: |
-            trivy-${{ runner.os }}-${{ github.workflow }}-
-            trivy-${{ runner.os }}-
-
-      - name: Run Trivy vulnerability scanner (filesystem)
+      - name: Run Trivy scanner
         uses: aquasecurity/trivy-action@0.33.1
         with:
           scan-type: 'fs'
@@ -138,10 +129,19 @@ jobs:
         with:
           sarif_file: 'trivy-fs-results.sarif'
 
+      - name: Display scan results
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'  # FIXME: Temporarily don't fail on CRITICAL/HIGH
+
   # RELEASE PLEASE
   release:
     name: 📦 Release please
-    needs: [test, security-scan, code-scan]
+    needs: [test, trivy-scan, codeql-scan]
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
@@ -278,7 +278,7 @@ jobs:
   # SUMMARY
   summary:
     name: 📋 Pipeline
-    needs: [test, security-scan, code-scan, release, docker-backend, docker-frontend]
+    needs: [test, trivy-scan, codeql-scan, release, docker-backend, docker-frontend]
     if: always() && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
@@ -310,7 +310,7 @@ jobs:
 
           echo "| 🧪 Tests | $(fmt "$test_status") |" >> $GITHUB_STEP_SUMMARY
           echo "| 🧬 Code scan (CodeQL) | $(fmt "$codeql_status") |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🔒 Security scan (Trivy) | $(fmt "$scan_status") |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🦑 Code scan (Trivy) | $(fmt "$scan_status") |" >> $GITHUB_STEP_SUMMARY
           echo "| 📦 Release please | $(fmt "$release_status") |" >> $GITHUB_STEP_SUMMARY
           echo "| 🐳 Backend image | $(fmt "$backend_status") |" >> $GITHUB_STEP_SUMMARY
           echo "| 🐳 Frontend image | $(fmt "$frontend_status") |" >> $GITHUB_STEP_SUMMARY
