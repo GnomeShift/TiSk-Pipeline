@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.13.4](https://github.com/GnomeShift/TiSk-Pipeline/compare/v1.13.3...v1.13.4) (2026-01-09)
+
+
+### 👷 CI/CD
+
+* pipeline high ([32df75f](https://github.com/GnomeShift/TiSk-Pipeline/commit/32df75f84f4bb978e5a2f7c896057a7334de25c2))
+* pipeline high ([257d868](https://github.com/GnomeShift/TiSk-Pipeline/commit/257d868efa74cddbe2b9df743dde24423ddf75ee))
+
 ## [1.13.3](https://github.com/GnomeShift/TiSk-Pipeline/compare/v1.13.2...v1.13.3) (2026-01-09)
 
 
