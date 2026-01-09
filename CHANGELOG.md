@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.2](https://github.com/GnomeShift/TiSk-Pipeline/compare/v1.13.1...v1.13.2) (2026-01-09)
+
+
+### 👷 CI/CD
+
+* unsplit and update pipeline ([7a268bf](https://github.com/GnomeShift/TiSk-Pipeline/commit/7a268bf56ceaa187fd7d833c8b63942256ab0800))
+
 ## [1.13.1](https://github.com/GnomeShift/TiSk-Pipeline/compare/v1.13.0...v1.13.1) (2026-01-09)
 
 
