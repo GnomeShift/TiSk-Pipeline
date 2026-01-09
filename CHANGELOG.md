@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.13.6](https://github.com/GnomeShift/TiSk-Pipeline/compare/v1.13.5...v1.13.6) (2026-01-09)
+
+
+### 👷 CI/CD
+
+* fix EOF ([d10ebda](https://github.com/GnomeShift/TiSk-Pipeline/commit/d10ebda82ee34f7fd37cd58fe8689f271869773b))
+* fix EOF ([e1f69bb](https://github.com/GnomeShift/TiSk-Pipeline/commit/e1f69bb4b5e0721edb53409d21339b733878f2a5))
+
 ## [1.13.5](https://github.com/GnomeShift/TiSk-Pipeline/compare/v1.13.4...v1.13.5) (2026-01-09)
 
 
