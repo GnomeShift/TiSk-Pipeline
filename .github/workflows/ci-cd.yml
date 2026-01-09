@@ -244,8 +244,8 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Step | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| 🧪 Tests | ${{ needs.test.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🔒 Security scan | ${{ needs.security-scan.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🧪 Tests | ${{ needs.test.result == 'success' && '✅ Passed' || '❌ Skipped/Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔒 Security scan | ${{ needs.security-scan.result == 'success' && '✅ Passed' || '❌ Skipped/Failed' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| 📦 Release | ${{ needs.release.result == 'success' && '✅ Created' || '⏭️ No release' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| 🐳 Backend image | ${{ needs.docker-backend.result == 'success' && '✅ Built & Pushed' || '❌ Skipped/Failed' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| 🐳 Frontend image | ${{ needs.docker-frontend.result == 'success' && '✅ Built & Pushed' || '❌ Skipped/Failed' }} |" >> $GITHUB_STEP_SUMMARY
