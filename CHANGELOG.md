@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.5](https://github.com/GnomeShift/TiSk-Pipeline/compare/v1.13.4...v1.13.5) (2026-01-09)
+
+
+### 👷 CI/CD
+
+* fix pipeline login ([589162a](https://github.com/GnomeShift/TiSk-Pipeline/commit/589162a902f34494530d501de7c353c8a791f9d0))
+
 ## [1.13.4](https://github.com/GnomeShift/TiSk-Pipeline/compare/v1.13.3...v1.13.4) (2026-01-09)
 
 
