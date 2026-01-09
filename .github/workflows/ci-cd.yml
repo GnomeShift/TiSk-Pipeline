@@ -2,33 +2,47 @@ name: CI-CD pipeline
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: write
   security-events: write
-  actions: read
+  checks: write
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ci-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 
 env:
   JAVA_VERSION: '21'
-  BACKEND_IMAGE: ${{ secrets.DOCKERHUB_LOGIN }}/tisk-backend
-  FRONTEND_IMAGE: ${{ secrets.DOCKERHUB_LOGIN }}/tisk-frontend
 
 jobs:
-  # TESTS (PR + PUSH)
+  # CHECK
+  check:
+    name: 🚦 Check PR source
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+    steps:
+      - name: Check if PR is from release-please
+        id: check
+        run: |
+          if [[ "${{ github.actor }}" == "github-actions[bot]" ]] || \
+             [[ "${{ github.head_ref }}" == release-please-* ]]; then
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            echo "⏭️ Skipping"
+          else
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "✅ Running"
+          fi
+
+  # TESTS
   test:
     name: 🧪 Tests
-    if: |
-      github.event_name == 'pull_request' && 
-      github.actor != 'github-actions[bot]'
+    needs: check
+    if: needs.check.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -45,7 +59,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run tests
-        run: ./gradlew test --no-daemon
+        run: ./gradlew test --no-daemon --parallel
 
       - name: Generate test report
         uses: dorny/test-reporter@v2
@@ -66,12 +80,11 @@ jobs:
             build/test-results/
           retention-days: 14
 
-  # SECURITY SCAN (PR + push)
+  # SECURITY SCAN
   security-scan:
     name: 🔒 Security scan
-    if: |
-      github.event_name == 'pull_request' && 
-      github.actor != 'github-actions[bot]'
+    needs: check
+    if: needs.check.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -102,175 +115,34 @@ jobs:
           severity: 'CRITICAL,HIGH'
           exit-code: '0'  # TODO: Set to '1' to fail on CRITICAL/HIGH
 
-  # RELEASE PLEASE (Push)
-  release:
-    name: 📦 Release Please
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
-      tag_name: ${{ steps.release.outputs.tag_name }}
-      version: ${{ steps.release.outputs.version }}
-      major: ${{ steps.release.outputs.major }}
-      minor: ${{ steps.release.outputs.minor }}
-      patch: ${{ steps.release.outputs.patch }}
-    steps:
-      - name: Release please
-        id: release
-        uses: googleapis/release-please-action@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          config-file: .github/release-please-config.json
-          manifest-file: .github/.release-please-manifest.json
-
-  # BUILD AND PUSH BACKEND
-  docker-backend:
-    name: 🐳 Docker backend
-    needs: [release]
-    if: needs.release.outputs.release_created == 'true'
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ needs.release.outputs.version }}
-      digest: ${{ steps.build.outputs.digest }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Setup QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_LOGIN }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.BACKEND_IMAGE }}
-          tags: |
-            type=raw,value=latest
-            type=sha,format=short
-            type=semver,pattern={{version}},value=${{ needs.release.outputs.version }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ needs.release.outputs.version }}
-            type=semver,pattern={{major}},value=${{ needs.release.outputs.version }}
-
-      - name: Build and push
-        id: build
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile-backend
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=backend
-          cache-to: type=gha,mode=max,scope=backend
-          platforms: linux/amd64,linux/arm64
-          build-args: |
-            BUILD_DATE=${{ github.event.head_commit.timestamp }}
-            VCS_REF=${{ github.sha }}
-            VERSION=${{ needs.release.outputs.version }}
-
-  # BUILD AND PUSH FRONTEND
-  docker-frontend:
-    name: 🐳 Docker Frontend
-    needs: [release]
-    if: needs.release.outputs.release_created == 'true'
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ needs.release.outputs.version }}
-      digest: ${{ steps.build.outputs.digest }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_LOGIN }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.FRONTEND_IMAGE }}
-          tags: |
-            type=raw,value=latest
-            type=sha,format=short
-            type=semver,pattern={{version}},value=${{ needs.release.outputs.version }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ needs.release.outputs.version }}
-            type=semver,pattern={{major}},value=${{ needs.release.outputs.version }}
-
-      - name: Build and push
-        id: build
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile-frontend
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=frontend
-          cache-to: type=gha,mode=max,scope=frontend
-          platforms: linux/amd64,linux/arm64
-          build-args: |
-            BUILD_DATE=${{ github.event.head_commit.timestamp }}
-            VCS_REF=${{ github.sha }}
-            VERSION=${{ needs.release.outputs.version }}
-
-  # SUMMARY (Push)
-  summary:
-    name: 📋 Pipeline
-    needs: [release, docker-backend, docker-frontend]
-    if: always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+  # PIPELINE STATUS CHECK
+  pipeline-status:
+    name: ✅ Pipeline status
+    needs: [check, test, security-scan]
+    if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Generate summary
+      - name: Check pipeline status
         run: |
-          echo "## 🚀 CI-CD pipeline summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Step | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| 🧪 Tests | ${{ needs.test.result == 'success' && '✅ Passed' || '❌ Skipped/Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🔒 Security scan | ${{ needs.security-scan.result == 'success' && '✅ Passed' || '❌ Skipped/Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 📦 Release | ${{ needs.release.result == 'success' && '✅ Created' || '⏭️ No release' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🐳 Backend image | ${{ needs.docker-backend.result == 'success' && '✅ Built & Pushed' || '❌ Skipped/Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🐳 Frontend image | ${{ needs.docker-frontend.result == 'success' && '✅ Built & Pushed' || '❌ Skipped/Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "## 🧪 Pipeline results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
-          if [[ "${{ needs.release.outputs.release_created }}" == "true" ]]; then
-            echo "### 🎉 Release created!" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
-            echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
-            echo "| Version | \`${{ needs.release.outputs.version }}\` |" >> $GITHUB_STEP_SUMMARY
-            echo "| Tag | \`${{ needs.release.outputs.tag_name }}\` |" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-          
-            echo "### 🐳 Docker images" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**Backend:**" >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-            echo "docker pull ${{ env.BACKEND_IMAGE }}:${{ needs.release.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-            echo "docker pull ${{ env.BACKEND_IMAGE }}:latest" >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**Frontend:**" >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-            echo "docker pull ${{ env.FRONTEND_IMAGE }}:${{ needs.release.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-            echo "docker pull ${{ env.FRONTEND_IMAGE }}:latest" >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ needs.check.outputs.should_run }}" == "false" ]]; then
+            echo "⏭️ Pipeline was skipped" >> $GITHUB_STEP_SUMMARY
+            exit 0
           fi
+          
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🧪 Tests | ${{ needs.test.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔒 Security | ${{ needs.security-scan.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          
+          if [[ "${{ needs.test.result }}" != "success" ]] || \
+             [[ "${{ needs.security-scan.result }}" != "success" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "❌ **Pipeline failed!**" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **All checks passed!**" >> $GITHUB_STEP_SUMMARY
