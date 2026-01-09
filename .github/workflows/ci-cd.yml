@@ -334,3 +334,4 @@ jobs:
             echo "docker pull ${{ env.FRONTEND_IMAGE }}:${{ needs.release.outputs.version }}" >> $GITHUB_STEP_SUMMARY
             echo "docker pull ${{ env.FRONTEND_IMAGE }}:latest" >> $GITHUB_STEP_SUMMARY
             echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          fi
