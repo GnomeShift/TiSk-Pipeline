@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.8](https://github.com/GnomeShift/TiSk-Pipeline/compare/v1.13.7...v1.13.8) (2026-01-10)
+
+
+### ♻️ Refactoring
+
+* update deploy files ([ce58a45](https://github.com/GnomeShift/TiSk-Pipeline/commit/ce58a45b2c5c5a2deaba8213b8828e5a64754e3c))
+
 ## [1.13.7](https://github.com/GnomeShift/TiSk-Pipeline/compare/v1.13.6...v1.13.7) (2026-01-10)
 
 
