@@ -292,8 +292,8 @@ jobs:
           echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
 
           test_status="${{ needs.test.result }}"
-          scan_status="${{ needs.codeql-scan.result }}"
-          codeql_status="${{ needs.trivyscan.result }}"
+          codeql_status="${{ needs.codeql-scan.result }}"
+          trivy_status="${{ needs.trivy-scan.result }}"
           release_status="${{ needs.release.result }}"
           backend_status="${{ needs.docker-backend.result }}"
           frontend_status="${{ needs.docker-frontend.result }}"
@@ -310,7 +310,7 @@ jobs:
 
           echo "| 🧪 Tests | $(fmt "$test_status") |" >> $GITHUB_STEP_SUMMARY
           echo "| 🧬 Code scan (CodeQL) | $(fmt "$codeql_status") |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🦑 Code scan (Trivy) | $(fmt "$scan_status") |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🦑 Code scan (Trivy) | $(fmt "$trivy_status") |" >> $GITHUB_STEP_SUMMARY
           echo "| 📦 Release please | $(fmt "$release_status") |" >> $GITHUB_STEP_SUMMARY
           echo "| 🐳 Backend image | $(fmt "$backend_status") |" >> $GITHUB_STEP_SUMMARY
           echo "| 🐳 Frontend image | $(fmt "$frontend_status") |" >> $GITHUB_STEP_SUMMARY
