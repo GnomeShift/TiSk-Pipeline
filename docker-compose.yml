@@ -47,8 +47,6 @@ services:
       - .env.production
     networks:
       - tisk-network
-    ports:
-      - "4173:4173"
     depends_on:
       tisk-backend:
         condition: service_started

@@ -1,9 +1,9 @@
 # Stage 1
-FROM gradle:8.14-jdk21 AS backend-builder
+FROM --platform=$BUILDPLATFORM gradle:8.14-jdk21 AS backend-builder
 WORKDIR /app
-COPY --chown=gradle:gradle build.gradle.kts settings.gradle.kts ./
+COPY --chown=gradle:gradle build.gradle.kts settings.gradle.kts lombok.config ./
 COPY --chown=gradle:gradle gradle ./gradle
-RUN gradle dependencies --no-daemon
+RUN gradle dependencies --no-daemon --build-cache
 COPY --chown=gradle:gradle src ./src
 RUN gradle bootJar --no-daemon
 
