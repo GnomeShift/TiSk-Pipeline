@@ -19,8 +19,8 @@ permissions:
 
 env:
   JAVA_VERSION: '21'
-  BACKEND_IMAGE: ${{ vars.DOCKERHUB_LOGIN }}/tisk-backend
-  FRONTEND_IMAGE: ${{ vars.DOCKERHUB_LOGIN }}/tisk-frontend
+  BACKEND_IMAGE: ${{ vars.DOCKERHUB_LOGIN }}/tisk-pipeline-backend
+  FRONTEND_IMAGE: ${{ vars.DOCKERHUB_LOGIN }}/tisk-pipeline-frontend
 
 jobs:
   # TESTING
@@ -51,7 +51,7 @@ jobs:
         uses: dorny/test-reporter@v2
         if: always()
         with:
-          name: JUnit Test Results
+          name: JUnit test results
           path: build/test-results/test/*.xml
           reporter: java-junit
           fail-on-error: false
@@ -147,7 +147,6 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
@@ -155,7 +154,6 @@ jobs:
       major: ${{ steps.release.outputs.major }}
       minor: ${{ steps.release.outputs.minor }}
       patch: ${{ steps.release.outputs.patch }}
-
     steps:
       - name: Release please
         id: release
@@ -176,7 +174,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -233,7 +230,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
