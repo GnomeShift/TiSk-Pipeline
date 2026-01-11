@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.1](https://github.com/GnomeShift/TiSk-Pipeline/compare/1.15.0...1.15.1) (2026-01-11)
+
+
+### 👷 CI/CD
+
+* remove sha ([7b9471d](https://github.com/GnomeShift/TiSk-Pipeline/commit/7b9471d46b0c5dfc09424e2b7860674507318fa2))
+
 ## [1.15.0](https://github.com/GnomeShift/TiSk-Pipeline/compare/1.14.0...1.15.0) (2026-01-11)
 
 
