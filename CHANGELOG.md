@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.15.0](https://github.com/GnomeShift/TiSk-Pipeline/compare/1.14.0...1.15.0) (2026-01-11)
+
+
+### 🚀 Features
+
+* add file ([5489489](https://github.com/GnomeShift/TiSk-Pipeline/commit/54894892d7f5cfb57f56f60741f939c42e0f3847))
+
+
+### 🐛 Bug fixes
+
+* delete file ([889558e](https://github.com/GnomeShift/TiSk-Pipeline/commit/889558e9a687b36b14bd077940b67508a5a0b6ff))
+
 ## [1.14.0](https://github.com/GnomeShift/TiSk-Pipeline/compare/v1.13.8...1.14.0) (2026-01-11)
 
 
