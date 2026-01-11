@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.14.0](https://github.com/GnomeShift/TiSk-Pipeline/compare/v1.13.8...1.14.0) (2026-01-11)
+
+
+### 🚀 Features
+
+* pipeline ([e07619f](https://github.com/GnomeShift/TiSk-Pipeline/commit/e07619f54f54365ed4957d37f933ca1513cd4ace))
+
+
+### 🐛 Bug fixes
+
+* pipeline config ([ef7e992](https://github.com/GnomeShift/TiSk-Pipeline/commit/ef7e9928e149a1cfd379f6bd140ffa98d3d8d349))
+* pipeline config ([945b27b](https://github.com/GnomeShift/TiSk-Pipeline/commit/945b27bf8997b35e346ded51c6b9eaeb4d1d3482))
+
 ## [1.13.8](https://github.com/GnomeShift/TiSk-Pipeline/compare/v1.13.7...v1.13.8) (2026-01-10)
 
 
