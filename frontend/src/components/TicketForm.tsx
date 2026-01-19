@@ -1,208 +1,127 @@
-import React, {useEffect, useState} from 'react';
-import {useNavigate, useParams} from 'react-router-dom';
-import {CreateTicketDTO, TicketPriority, TicketStatus, UpdateTicketDTO} from '../types/ticket';
-import {ticketService} from '../services/ticketService';
-import {useAuth} from "../contexts/AuthContext.tsx";
-import {useNotification} from '../contexts/NotificationContext';
-import {getPriorityLabel, getStatusLabel} from "../services/utils";
-import {UserRole} from '../types/user.ts';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { TicketPriority, TicketStatus } from '../types/ticket';
+import { ticketService } from '../services/ticketService';
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from '../services/toast';
 import FormInput from './FormInput';
 import { useFormValidation } from '../hooks/useFormValidation';
+import { Button } from './ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { TicketPrioritySelect, TicketStatusSelect } from './ui/entity-select';
+import { SkeletonTicketForm } from './ui/skeleton';
+import { ArrowLeft, Save } from 'lucide-react';
+import { usePermissions } from "../hooks/usePermissions";
 
 const TicketForm: React.FC = () => {
     const navigate = useNavigate();
-    const notification = useNotification();
     const { id } = useParams();
     const { user } = useAuth();
-    const isEdit = !!id;
+    const permissions = usePermissions();
     const { forceValidate, registerFieldError, validateForm } = useFormValidation();
 
-    const [formData, setFormData] = useState({
-        title: '',
-        description: '',
-        status: TicketStatus.OPEN,
-        priority: TicketPriority.LOW
-    });
-
+    const [formData, setFormData] = useState({ title: '', description: '', status: TicketStatus.OPEN, priority: TicketPriority.LOW });
     const [loading, setLoading] = useState(false);
-    const [initialLoading, setInitialLoading] = useState(isEdit);
+    const [initLoading, setInitLoading] = useState(!!id);
 
     useEffect(() => {
-        if (isEdit && id) {
-            loadTicket(id);
-        }
-    }, [id, isEdit]);
-
-    const loadTicket = async (ticketId: string) => {
-        try {
-            setInitialLoading(true);
-            const ticket = await ticketService.getById(ticketId);
-            setFormData({
-                title: ticket.title,
-                description: ticket.description,
-                status: ticket.status,
-                priority: ticket.priority
-            });
-        }
-        catch (err: any) {
-            notification.error('Ошибка загрузки тикета');
-            navigate('/');
-        } finally {
-            setInitialLoading(false);
-        }
-    };
+        if (id) ticketService.getById(id).then(t => setFormData({ title: t.title, description: t.description, status: t.status, priority: t.priority })).catch(() => { toast.error('Ошибка'); navigate('/'); }).finally(() => setInitLoading(false));
+    }, [id]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
         const { isValid } = await validateForm();
-        if (!isValid) {
-            return;
-        }
+        if (!isValid) return;
 
+        setLoading(true);
         try {
-            setLoading(true);
-            if (isEdit && id) {
-                const updateData: UpdateTicketDTO = {
-                    title: formData.title,
-                    description: formData.description,
-                    status: formData.status,
-                    priority: formData.priority
-                };
-                await ticketService.update(id, updateData);
-                notification.success('Тикет успешно обновлен');
-            }
-            else {
-                const createData: CreateTicketDTO = {
-                    title: formData.title,
-                    description: formData.description,
-                    priority: formData.priority,
-                    reporterId: user!.id
-                };
-                await ticketService.create(createData);
-                notification.success('Тикет успешно создан');
+            if (id) {
+                await ticketService.update(id, formData);
+                toast.success('Обновлено');
+            } else {
+                await ticketService.create({ ...formData, reporterId: user!.id });
+                toast.success('Создано');
             }
             navigate('/');
-        }
-        catch (err: any) {
-            notification.error('Ошибка при сохранении тикета');
-        }
-        finally {
-            setLoading(false);
-        }
+        } catch { toast.error('Ошибка сохранения'); } finally { setLoading(false); }
     };
 
-    const handleChange = (
-        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-    ) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value,
-        });
-    };
-
-    const canChangeStatus = () => {
-        if (!user) return false;
-        return user.role === UserRole.ADMIN || user.role === UserRole.SUPPORT;
-    };
-
-    if (initialLoading) return <div className="loading" />;
+    if (initLoading) return <SkeletonTicketForm />;
 
     return (
-        <div className="ticket-form">
-            <h2>{isEdit ? 'Редактировать тикет' : 'Создать новый тикет'}</h2>
+        <div className="max-w-3xl mx-auto">
+            <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6 gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Назад
+            </Button>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-2xl">
+                        {id ? 'Редактировать' : 'Создать'} тикет
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <form onSubmit={handleSubmit} noValidate className="space-y-6">
+                        <FormInput
+                            id="title"
+                            name="title"
+                            label="Заголовок"
+                            value={formData.title}
+                            onChange={e => setFormData({ ...formData, title: e.target.value })}
+                            required disabled={loading} minLength={1} maxLength={255} forceValidate={forceValidate} onValidationChange={registerFieldError} />
+                        <FormInput
+                            type="textarea"
+                            id="description"
+                            name="description"
+                            label="Описание"
+                            value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} required rows={5} disabled={loading} minLength={1} forceValidate={forceValidate} onValidationChange={registerFieldError} />
 
-            <form onSubmit={handleSubmit} noValidate>
-                <FormInput
-                    type="text"
-                    id="title"
-                    name="title"
-                    label="Заголовок"
-                    value={formData.title}
-                    onChange={handleChange}
-                    required
-                    placeholder="Кратко опишите проблему"
-                    disabled={loading}
-                    minLength={1}
-                    maxLength={255}
-                    forceValidate={forceValidate}
-                    onValidationChange={registerFieldError}
-                />
+                        <div className="grid gap-6 md:grid-cols-2">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">
+                                    Приоритет
+                                </label>
+                                <TicketPrioritySelect
+                                    value={formData.priority}
+                                    onChange={v => setFormData({ ...formData, priority: v as TicketPriority })}
+                                    disabled={loading}
+                                />
+                            </div>
+                            {id && permissions.canChangeTicketStatus &&
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium">Статус</label>
+                                    <TicketStatusSelect
+                                        value={formData.status}
+                                        onChange={v => setFormData({ ...formData, status: v as TicketStatus })}
+                                        disabled={loading}
+                                    />
+                                </div>
+                            }
+                        </div>
 
-                <FormInput
-                    type="textarea"
-                    id="description"
-                    name="description"
-                    label="Описание"
-                    value={formData.description}
-                    onChange={handleChange}
-                    required
-                    rows={5}
-                    placeholder="Подробно опишите проблему, шаги для воспроизведения..."
-                    disabled={loading}
-                    minLength={1}
-                    maxLength={5000}
-                    forceValidate={forceValidate}
-                    onValidationChange={registerFieldError}
-                />
+                        {!id && user &&
+                            <div className="p-4 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200 text-sm">
+                                Будет создан от имени: <strong>{user.firstName} {user.lastName}</strong>
+                            </div>
+                        }
 
-                <div className="form-row">
-                    <div className="form-group">
-                        <label htmlFor="priority">Приоритет</label>
-                        <select
-                            id="priority"
-                            name="priority"
-                            value={formData.priority}
-                            onChange={handleChange}
-                            className="form-control"
-                            disabled={loading}
-                        >
-                            <option value={TicketPriority.LOW}>{getPriorityLabel(TicketPriority.LOW)}</option>
-                            <option value={TicketPriority.MEDIUM}>{getPriorityLabel(TicketPriority.MEDIUM)}</option>
-                            <option value={TicketPriority.HIGH}>{getPriorityLabel(TicketPriority.HIGH)}</option>
-                            <option value={TicketPriority.VERY_HIGH}>{getPriorityLabel(TicketPriority.VERY_HIGH)}</option>
-                        </select>
-                    </div>
-
-                    {isEdit && canChangeStatus() && (
-                        <div className="form-group">
-                            <label htmlFor="status">Статус</label>
-                            <select
-                                id="status"
-                                name="status"
-                                value={formData.status}
-                                onChange={handleChange}
-                                className="form-control"
+                        <div className="flex gap-3 pt-4">
+                            <Button type="submit" loading={loading}>
+                                <Save className="h-4 w-4 mr-2" />
+                                {id ? 'Обновить' : 'Создать'}
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => navigate('/')}
                                 disabled={loading}
                             >
-                                <option value={TicketStatus.OPEN}>{getStatusLabel(TicketStatus.OPEN)}</option>
-                                <option value={TicketStatus.IN_PROGRESS}>{getStatusLabel(TicketStatus.IN_PROGRESS)}</option>
-                                <option value={TicketStatus.CLOSED}>{getStatusLabel(TicketStatus.CLOSED)}</option>
-                            </select>
+                                Отмена
+                            </Button>
                         </div>
-                    )}
-                </div>
-
-                {!isEdit && user && (
-                    <div className="form-info">
-                        <p>Тикет будет создан от имени: <strong>{user.firstName} {user.lastName}</strong></p>
-                    </div>
-                )}
-
-                <div className="form-actions">
-                    <button type="submit" className="btn btn-primary" disabled={loading}>
-                        {loading ? 'Сохранение...' : isEdit ? 'Обновить' : 'Создать'}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => navigate('/')}
-                        className="btn btn-secondary"
-                        disabled={loading}
-                    >
-                        Отмена
-                    </button>
-                </div>
-            </form>
+                    </form>
+                </CardContent>
+            </Card>
         </div>
     );
 };

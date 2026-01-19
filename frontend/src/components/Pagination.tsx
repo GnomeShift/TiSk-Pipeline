@@ -1,4 +1,7 @@
 import React from 'react';
+import { Button } from './ui/button';
+import { Card } from './ui/card';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface PaginationProps {
     currentPage: number;
@@ -15,8 +18,8 @@ const Pagination: React.FC<PaginationProps> = ({
                                                    totalItems,
                                                    itemsPerPage
                                                }) => {
-    const generatePageNumbers = () => {
-        const pages = [];
+    const generatePageNumbers = (): (number | string)[] => {
+        const pages: (number | string)[] = [];
         const maxVisiblePages = 5;
 
         if (totalPages <= maxVisiblePages) {
@@ -46,7 +49,6 @@ const Pagination: React.FC<PaginationProps> = ({
                 pages.push(totalPages);
             }
         }
-
         return pages;
     };
 
@@ -56,47 +58,63 @@ const Pagination: React.FC<PaginationProps> = ({
     if (totalPages <= 1) return null;
 
     return (
-        <div className="pagination-container">
-            <div className="pagination-info">
-                Показано {startItem}-{endItem} из {totalItems} тикетов
-            </div>
+        <Card className="p-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                {/* Info */}
+                <p className="text-sm text-muted-foreground">
+                    Показано <span className="font-medium text-foreground">{startItem}-{endItem}</span> из{' '}
+                    <span className="font-medium text-foreground">{totalItems}</span>
+                </p>
 
-            <div className="pagination">
-                <button
-                    className="pagination-btn"
-                    onClick={() => onPageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                >
-                    ← Предыдущая
-                </button>
+                {/* Controls */}
+                <div className="flex items-center gap-1">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onPageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="gap-1"
+                    >
+                        <ChevronLeft className="h-4 w-4" />
+                        <span className="hidden sm:inline">Предыдущая</span>
+                    </Button>
 
-                <div className="pagination-numbers">
-                    {generatePageNumbers().map((page, index) => (
-                        page === '...' ? (
-                            <span key={`ellipsis-${index}`} className="pagination-ellipsis">
-                                ...
-                            </span>
-                        ) : (
-                            <button
-                                key={page}
-                                className={`pagination-number ${currentPage === page ? 'active' : ''}`}
-                                onClick={() => onPageChange(page as number)}
-                            >
-                                {page}
-                            </button>
-                        )
-                    ))}
+                    <div className="flex items-center gap-1">
+                        {generatePageNumbers().map((page, index) => (
+                            page === '...' ? (
+                                <span
+                                    key={`ellipsis-${index}`}
+                                    className="w-9 h-9 flex items-center justify-center text-muted-foreground"
+                                >
+                                  ...
+                                </span>
+                            ) : (
+                                <Button
+                                    key={page}
+                                    variant={currentPage === page ? 'default' : 'outline'}
+                                    size="sm"
+                                    onClick={() => onPageChange(page as number)}
+                                    className="w-9 h-9 p-0"
+                                >
+                                    {page}
+                                </Button>
+                            )
+                        ))}
+                    </div>
+
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onPageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className="gap-1"
+                    >
+                        <span className="hidden sm:inline">Следующая</span>
+                        <ChevronRight className="h-4 w-4" />
+                    </Button>
                 </div>
-
-                <button
-                    className="pagination-btn"
-                    onClick={() => onPageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                >
-                    Следующая →
-                </button>
             </div>
-        </div>
+        </Card>
     );
 };
 

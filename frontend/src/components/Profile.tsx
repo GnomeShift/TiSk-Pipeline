@@ -1,72 +1,50 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useNotification } from '../contexts/NotificationContext';
 import { userService } from '../services/userService';
-import { ChangePasswordDTO } from '../types/auth';
-import { UpdateUserDTO } from '../types/user';
-import { getRoleLabel } from '../services/utils';
+import { getUserRoleVariant, getUserRoleLabel, formatDate, formatDateTime } from '../services/utils';
+import { useFormValidation } from '../hooks/useFormValidation';
 import FormInput, { validationRules } from './FormInput';
 import PasswordInput from './PasswordInput';
-import { useFormValidation } from '../hooks/useFormValidation';
+import { toast } from '../services/toast';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { SkeletonProfile } from './ui/skeleton';
+import { Edit, Key, Save, User, X } from 'lucide-react';
 
 const Profile: React.FC = () => {
-    const notification = useNotification();
     const { user, updateUser, changePassword } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(false);
-
     const profileValidation = useFormValidation();
     const passwordValidation = useFormValidation();
+    const [formData, setFormData] = useState({ ...user });
+    const [passwordData, setPasswordData] = useState({currentPassword: '', newPassword: '', confirmPassword: '' });
 
-    const [formData, setFormData] = useState<UpdateUserDTO>({
-        firstName: user?.firstName || '',
-        lastName: user?.lastName || '',
-        email: user?.email || '',
-        login: user?.login || '',
-        phoneNumber: user?.phoneNumber || '',
-        department: user?.department || '',
-        position: user?.position || ''
-    });
+    if (!user) return <SkeletonProfile />;
 
-    const [passwordData, setPasswordData] = useState<ChangePasswordDTO>({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-    });
+    const PROFILE_FIELDS = [
+        { name: 'firstName', label: 'Имя', required: true, grid: true },
+        { name: 'lastName', label: 'Фамилия', required: true, grid: true },
+        { name: 'email', label: 'Email', type: 'email', required: true, rules: [validationRules.email()] },
+        { name: 'login', label: 'Логин', required: true, rules: [validationRules.login(), validationRules.noSpaces()] },
+        { name: 'phoneNumber', label: 'Телефон', type: 'tel', rules: [validationRules.phone()] },
+        { name: 'department', label: 'Отдел', grid: true },
+        { name: 'position', label: 'Должность', grid: true },
+    ];
 
-    const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
-    };
-
-    const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        setPasswordData({
-            ...passwordData,
-            [e.target.name]: e.target.value
-        });
-    };
-
-    const handleProfileSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
         const { isValid } = await profileValidation.validateForm();
-        if (!isValid) {
-            return;
-        }
-
+        if (!isValid) return;
         setLoading(true);
 
         try {
-            if (user?.id) {
-                const updatedUser = await userService.update(user.id, formData);
-                updateUser(updatedUser);
-                setIsEditing(false);
-                notification.success('Профиль успешно обновлен');
-            }
-        } catch (error: any) {
-            notification.error('Ошибка при обновлении профиля');
+            updateUser(await userService.update(user.id, formData));
+            setIsEditing(false);
+            toast.success('Профиль обновлен');
+        } catch {
+            toast.error('Ошибка обновления профиля');
         } finally {
             setLoading(false);
         }
@@ -74,283 +52,169 @@ const Profile: React.FC = () => {
 
     const handlePasswordSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
         const { isValid } = await passwordValidation.validateForm();
-        if (!isValid) {
-            return;
-        }
-
+        if (!isValid) return;
         setLoading(true);
 
         try {
             await changePassword(passwordData);
             setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
             passwordValidation.resetValidation();
-            notification.success('Пароль успешно изменен');
-        } catch (error: any) {
-            notification.error('Неверный текущий пароль.');
+            toast.success('Пароль изменен');
+        } catch {
+            toast.error('Ошибка изменения пароля');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleCancelEdit = () => {
-        setIsEditing(false);
-        profileValidation.resetValidation();
-        setFormData({
-            firstName: user?.firstName || '',
-            lastName: user?.lastName || '',
-            email: user?.email || '',
-            login: user?.login || '',
-            phoneNumber: user?.phoneNumber || '',
-            department: user?.department || '',
-            position: user?.position || ''
-        });
-    };
-
-    if (!user) return null;
-
     return (
-        <div className="profile-container">
-            <h2>Профиль пользователя</h2>
+        <div className="max-w-3xl mx-auto space-y-6 pb-8">
+            {/* Header */}
+            <div className="flex items-center gap-3">
+                <User className="w-8 h-8 text-primary" />
+                <h2 className="text-2xl font-bold">Профиль пользователя</h2>
+            </div>
 
-            <div className="profile-sections">
-                <div className="profile-section">
-                    <h3>Личная информация</h3>
-
+            {/* Info */}
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                    <CardTitle className="text-xl">Личная информация</CardTitle>
+                    {!isEditing &&
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsEditing(true)}>
+                        <Edit className="w-4 h-4 mr-2" />
+                        Редактировать
+                    </Button>
+                    }
+                </CardHeader>
+                <CardContent>
                     {!isEditing ? (
-                        <div className="profile-info">
-                            <dl>
-                                <dt>Имя:</dt>
-                                <dd>{user.firstName}</dd>
-
-                                <dt>Фамилия:</dt>
-                                <dd>{user.lastName}</dd>
-
-                                <dt>Email:</dt>
-                                <dd>{user.email}</dd>
-
-                                <dt>Логин:</dt>
-                                <dd>{user.login}</dd>
-
-                                <dt>Телефон:</dt>
-                                <dd>{user.phoneNumber || '—'}</dd>
-
-                                <dt>Отдел:</dt>
-                                <dd>{user.department || '—'}</dd>
-
-                                <dt>Должность:</dt>
-                                <dd>{user.position || '—'}</dd>
-
-                                <dt>Роль:</dt>
+                        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {[
+                                { label: 'Имя', val: user.firstName }, { label: 'Фамилия', val: user.lastName },
+                                { label: 'Email', val: user.email }, { label: 'Логин', val: user.login },
+                                { label: 'Телефон', val: user.phoneNumber || '—' }, { label: 'Отдел', val: user.department || '—' },
+                                { label: 'Должность', val: user.position || '—' }
+                            ].map(i => (
+                                <div key={i.label}>
+                                    <dt className="text-sm font-medium text-muted-foreground">{i.label}</dt>
+                                    <dd>{i.val}</dd>
+                                </div>
+                            ))}
+                            <div>
+                                <dt className="text-sm font-medium text-muted-foreground">Роль</dt>
                                 <dd>
-                                    <span className={`role-badge role-${user.role.toLowerCase()}`}>
-                                        {getRoleLabel(user.role)}
-                                    </span>
+                                    <Badge variant={getUserRoleVariant(user.role)}>
+                                        {getUserRoleLabel(user.role)}
+                                    </Badge>
                                 </dd>
-
-                                <dt>Зарегистрирован:</dt>
-                                <dd>{new Date(user.createdAt).toLocaleDateString()}</dd>
-
-                                {user.lastLoginAt && (
-                                    <>
-                                        <dt>Последний вход:</dt>
-                                        <dd>{new Date(user.lastLoginAt).toLocaleString()}</dd>
-                                    </>
-                                )}
-                            </dl>
-
-                            <button
-                                onClick={() => setIsEditing(true)}
-                                className="btn btn-primary"
-                            >
-                                Редактировать
-                            </button>
-                        </div>
+                            </div>
+                            <div>
+                                <dt className="text-sm font-medium text-muted-foreground">Регистрация</dt>
+                                <dd>{formatDate(user.createdAt)}</dd>
+                            </div>
+                            {user.lastLoginAt &&
+                                <div>
+                                    <dt className="text-sm font-medium text-muted-foreground">Вход</dt>
+                                    <dd>{formatDateTime(user.lastLoginAt)}</dd>
+                                </div>
+                            }
+                        </dl>
                     ) : (
-                        <form onSubmit={handleProfileSubmit} className="profile-form" noValidate>
-                            <FormInput
-                                type="text"
-                                id="profile-firstName"
-                                name="firstName"
-                                label="Имя"
-                                value={formData.firstName || ''}
-                                onChange={handleProfileChange}
-                                required
-                                disabled={loading}
-                                minLength={2}
-                                maxLength={100}
-                                placeholder="Иван"
-                                forceValidate={profileValidation.forceValidate}
-                                onValidationChange={profileValidation.registerFieldError}
-                            />
-
-                            <FormInput
-                                type="text"
-                                id="profile-lastName"
-                                name="lastName"
-                                label="Фамилия"
-                                value={formData.lastName || ''}
-                                onChange={handleProfileChange}
-                                required
-                                disabled={loading}
-                                minLength={2}
-                                maxLength={100}
-                                placeholder="Иванов"
-                                forceValidate={profileValidation.forceValidate}
-                                onValidationChange={profileValidation.registerFieldError}
-                            />
-
-                            <FormInput
-                                type="email"
-                                id="profile-email"
-                                name="email"
-                                label="Email"
-                                value={formData.email || ''}
-                                onChange={handleProfileChange}
-                                required
-                                placeholder="user@example.com"
-                                disabled={loading}
-                                rules={[validationRules.email()]}
-                                forceValidate={profileValidation.forceValidate}
-                                onValidationChange={profileValidation.registerFieldError}
-                            />
-
-                            <FormInput
-                                type="text"
-                                id="profile-login"
-                                name="login"
-                                label="Логин"
-                                value={formData.login || ''}
-                                onChange={handleProfileChange}
-                                required
-                                disabled={loading}
-                                minLength={3}
-                                maxLength={50}
-                                placeholder="user_login"
-                                rules={[
-                                    validationRules.login(),
-                                    validationRules.noSpaces()
-                                ]}
-                                forceValidate={profileValidation.forceValidate}
-                                onValidationChange={profileValidation.registerFieldError}
-                            />
-
-                            <FormInput
-                                type="tel"
-                                id="profile-phoneNumber"
-                                name="phoneNumber"
-                                label="Телефон"
-                                value={formData.phoneNumber || ''}
-                                onChange={handleProfileChange}
-                                placeholder="+7XXXXXXXXXX"
-                                disabled={loading}
-                                rules={[validationRules.phone()]}
-                                forceValidate={profileValidation.forceValidate}
-                                onValidationChange={profileValidation.registerFieldError}
-                            />
-
-                            <FormInput
-                                type="text"
-                                id="profile-department"
-                                name="department"
-                                label="Отдел"
-                                value={formData.department || ''}
-                                onChange={handleProfileChange}
-                                disabled={loading}
-                                forceValidate={profileValidation.forceValidate}
-                                onValidationChange={profileValidation.registerFieldError}
-                            />
-
-                            <FormInput
-                                type="text"
-                                id="profile-position"
-                                name="position"
-                                label="Должность"
-                                value={formData.position || ''}
-                                onChange={handleProfileChange}
-                                disabled={loading}
-                                forceValidate={profileValidation.forceValidate}
-                                onValidationChange={profileValidation.registerFieldError}
-                            />
-
-                            <div className="form-actions">
-                                <button
-                                    type="submit"
-                                    className="btn btn-primary"
-                                    disabled={loading}
-                                >
-                                    {loading ? 'Сохранение...' : 'Сохранить'}
-                                </button>
-                                <button
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {PROFILE_FIELDS.map((f) => (
+                                    <div key={f.name} className={f.grid ? "" : "sm:col-span-2"}>
+                                        <FormInput {...f}
+                                                   id={`p-${f.name}`}
+                                                   value={(formData as any)[f.name] || ''}
+                                                   onChange={e => setFormData({
+                                                       ...formData, [f.name]: e.target.value
+                                                   })}
+                                                   disabled={loading}
+                                                   forceValidate={profileValidation.forceValidate}
+                                                   onValidationChange={profileValidation.registerFieldError}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="flex gap-3 mt-6">
+                                <Button type="submit" loading={loading}>
+                                    <Save className="mr-2 h-4 w-4" />
+                                    Сохранить
+                                </Button>
+                                <Button
                                     type="button"
-                                    onClick={handleCancelEdit}
-                                    className="btn btn-secondary"
-                                    disabled={loading}
+                                    variant="secondary"
+                                    onClick={() => setIsEditing(false)} disabled={loading}
                                 >
+                                    <X className="mr-2 h-4 w-4" />
                                     Отмена
-                                </button>
+                                </Button>
                             </div>
                         </form>
                     )}
-                </div>
+                </CardContent>
+            </Card>
 
-                <div className="profile-section">
-                    <h3>Изменить пароль</h3>
-
-                    <form onSubmit={handlePasswordSubmit} className="profile-form" noValidate>
+            {/* Change password */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-xl flex items-center gap-2">
+                        <Key className="w-5 h-5" />
+                        Изменить пароль
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <form onSubmit={handlePasswordSubmit}
+                          className="max-w-sm space-y-4">
                         <FormInput
                             type="password"
                             id="currentPassword"
                             name="currentPassword"
                             label="Текущий пароль"
-                            value={passwordData.currentPassword}
-                            onChange={handlePasswordChange}
                             required
-                            disabled={loading}
-                            autoComplete="current-password"
+                            value={passwordData.currentPassword}
+                            onChange={e => setPasswordData({
+                                ...passwordData, [e.target.name]: e.target.value
+                            })}
                             forceValidate={passwordValidation.forceValidate}
                             onValidationChange={passwordValidation.registerFieldError}
                         />
-
                         <PasswordInput
                             id="newPassword"
                             name="newPassword"
                             label="Новый пароль"
-                            value={passwordData.newPassword}
-                            onChange={handlePasswordChange}
                             required
-                            disabled={loading}
-                            autoComplete="new-password"
+                            value={passwordData.newPassword}
+                            onChange={e => setPasswordData({
+                                ...passwordData, [e.target.name]: e.target.value
+                            })}
                             forceValidate={passwordValidation.forceValidate}
                             onValidationChange={passwordValidation.registerFieldError}
                         />
-
                         <FormInput
                             type="password"
                             id="confirmPassword"
                             name="confirmPassword"
-                            label="Подтвердите новый пароль"
-                            value={passwordData.confirmPassword}
-                            onChange={handlePasswordChange}
-                            required
-                            placeholder="••••••••"
-                            disabled={loading}
+                            label="Подтвердите пароль"
+                            required value={passwordData.confirmPassword}
+                            onChange={e => setPasswordData({
+                                ...passwordData, [e.target.name]: e.target.value
+                            })}
                             rules={[validationRules.match(() => passwordData.newPassword, 'Пароли')]}
                             forceValidate={passwordValidation.forceValidate}
                             onValidationChange={passwordValidation.registerFieldError}
                         />
-
-                        <button
-                            type="submit"
-                            className="btn btn-primary"
-                            disabled={loading}
-                        >
+                        <Button type="submit" disabled={loading} loading={loading}>
+                            <Key className="w-4 h-4 mr-2" />
                             {loading ? 'Изменение...' : 'Изменить пароль'}
-                        </button>
+                        </Button>
                     </form>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
         </div>
     );
 };

@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useImperativeHandle, forwardRef, useCallback, useMemo } from 'react';
+import React, { useImperativeHandle, forwardRef, useCallback, useMemo } from 'react';
+import { cn } from '../services/utils';
+import { Input } from './ui/input';
+import { Textarea } from './ui/textarea';
+import { Label } from './ui/label';
+import { AlertCircle, Check, X } from 'lucide-react';
+import { useFieldState } from '../hooks/useFieldState';
 
 export interface ValidationRule {
     validate: (value: string) => boolean;
@@ -23,7 +29,6 @@ interface FormInputProps {
     autoComplete?: string;
     autoFocus?: boolean;
     rules?: ValidationRule[];
-    validateOnBlur?: boolean;
     validateOnChange?: boolean;
     showSuccessState?: boolean;
     hint?: string;
@@ -31,7 +36,6 @@ interface FormInputProps {
     minLength?: number;
     maxLength?: number;
     pattern?: string;
-    externalError?: string;
     forceValidate?: number;
     onValidationChange?: (name: string, error: string) => void;
 }
@@ -49,7 +53,6 @@ const FormInput = forwardRef<FormInputRef, FormInputProps>(({
                                                                 autoComplete,
                                                                 autoFocus = false,
                                                                 rules = [],
-                                                                validateOnBlur = true,
                                                                 validateOnChange = false,
                                                                 showSuccessState = true,
                                                                 hint,
@@ -57,179 +60,150 @@ const FormInput = forwardRef<FormInputRef, FormInputProps>(({
                                                                 minLength,
                                                                 maxLength,
                                                                 pattern,
-                                                                externalError,
                                                                 forceValidate = 0,
                                                                 onValidationChange
                                                             }, ref) => {
-    const [error, setError] = useState<string>('');
-    const [touched, setTouched] = useState(false);
-    const [focused, setFocused] = useState(false);
-
     const isTextarea = type === 'textarea';
 
-    // Memoize validation
-    const validate = useCallback((val: string): string => {
-        if (required && !val.trim()) {
-            return `${label} обязательно для заполнения`;
-        }
-
+    const customValidate = useCallback((val: string): string => {
         if (minLength && val.length > 0 && val.length < minLength) {
             return `Минимум ${minLength} символов`;
         }
-
         if (maxLength && val.length > maxLength) {
             return `Максимум ${maxLength} символов`;
         }
-
         for (const rule of rules) {
             if (!rule.validate(val)) {
                 return rule.message;
             }
         }
-
         return '';
-    }, [required, label, minLength, maxLength, rules]);
+    }, [minLength, maxLength, rules]);
+
+    const { error, touched, focused, hasError, isValid: fieldIsValid, validate, handleBlur, handleFocus, clearError }
+        = useFieldState(value, {name, required, label, validate: customValidate, onValidationChange, forceValidate });
 
     useImperativeHandle(ref, () => ({
-        validate: () => {
-            const err = validate(value);
-            setError(err);
-            setTouched(true);
-            return err;
-        },
+        validate,
         getValue: () => value
     }), [validate, value]);
 
-    // Force validation on forceValidate change
-    useEffect(() => {
-        if (forceValidate > 0) {
-            const err = validate(value);
-            setError(err);
-            setTouched(true);
-            onValidationChange?.(name, err);
-        }
-    }, [forceValidate]);
-
-    // External error
-    useEffect(() => {
-        if (externalError) {
-            setError(externalError);
-            setTouched(true);
-        }
-    }, [externalError]);
-
     const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         onChange(e);
-        const newValue = e.target.value;
-
         if (validateOnChange && touched) {
-            const err = validate(newValue);
-            setError(err);
-            onValidationChange?.(name, err);
         } else if (error) {
-            setError('');
-            onValidationChange?.(name, '');
+            clearError();
         }
-    }, [onChange, validateOnChange, touched, validate, name, onValidationChange, error]);
+    }, [onChange, validateOnChange, touched, error, clearError]);
 
-    const handleBlur = useCallback(() => {
-        setFocused(false);
-        setTouched(true);
+    const isValid = fieldIsValid && showSuccessState;
 
-        if (validateOnBlur) {
-            const err = validate(value);
-            setError(err);
-            onValidationChange?.(name, err);
-        }
-    }, [validateOnBlur, validate, value, name, onValidationChange]);
+    const inputState = useMemo(() => {
+        if (hasError) return 'error';
+        if (isValid) return 'success';
+        return 'default';
+    }, [hasError, isValid]);
 
-    const handleFocus = useCallback(() => {
-        setFocused(true);
-    }, []);
-
-    const hasError = touched && !!error;
-    const isValid = touched && !error && !!value && showSuccessState;
-
-    const inputClassName = useMemo(() =>
-            `form-control ${hasError ? 'input-error' : ''} ${focused ? 'input-focused' : ''}`,
-        [hasError, focused]
-    );
+    const inputProps = {
+        id,
+        name,
+        value,
+        onChange: handleChange,
+        onBlur: handleBlur,
+        onFocus: handleFocus,
+        placeholder,
+        disabled,
+        autoComplete,
+        autoFocus
+    };
 
     return (
-        <div className={`form-group ${hasError ? 'has-error' : ''}`}>
-            <label htmlFor={id}>
+        <div className="space-y-1">
+            {/* Label */}
+            <Label htmlFor={id} state={hasError ? 'error' : 'default'} className="flex items-center gap-1">
                 {label}
-                {required && <span className="required-mark">*</span>}
-            </label>
+                {required && <span className="text-destructive font-bold">*</span>}
+            </Label>
 
-            <div className="input-wrapper">
+            {/* Input */}
+            <div className="relative">
                 {isTextarea ? (
-                    <textarea
-                        id={id}
-                        name={name}
-                        value={value}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        onFocus={handleFocus}
-                        placeholder={placeholder}
-                        disabled={disabled}
-                        autoComplete={autoComplete}
-                        autoFocus={autoFocus}
-                        className={inputClassName}
-                        aria-invalid={hasError ? true : undefined}
+                    <Textarea
+                        {...inputProps}
+                        state={inputState}
                         rows={rows || 4}
                         minLength={minLength}
                         maxLength={maxLength}
+                        className="pr-10"
                     />
                 ) : (
-                    <input
-                        id={id}
-                        name={name}
+                    <Input
+                        {...inputProps}
                         type={type}
-                        value={value}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        onFocus={handleFocus}
-                        placeholder={placeholder}
-                        disabled={disabled}
-                        autoComplete={autoComplete}
-                        autoFocus={autoFocus}
-                        className={inputClassName}
-                        aria-invalid={hasError ? true : undefined}
+                        state={inputState}
                         minLength={minLength}
                         maxLength={maxLength}
                         pattern={pattern}
+                        className="pr-10"
                     />
                 )}
 
+                {/* Validation icon */}
                 {touched && !focused && (
-                    <span className={`input-icon ${hasError ? 'input-icon-error' : isValid ? 'input-icon-success' : ''}`}>
-                        {hasError ? '✕' : isValid ? '✓' : ''}
-                    </span>
+                    <ValidationIcon hasError={hasError} isValid={isValid} isTextarea={isTextarea} />
                 )}
             </div>
 
-            {hasError && (
-                <span id={`${id}-error`} className="error-message" role="alert">
-                    <span className="error-icon">⚠</span>
-                    {error}
-                </span>
-            )}
+            {/* Error, hint, character counter */}
+            <div className="min-h-[1.25rem] flex items-start justify-between gap-2">
+                <div className="flex-1">
+                    {hasError ? (
+                        <ErrorMessage id={id} message={error} />
+                    ) : hint ? (
+                        <p id={`${id}-hint`} className="text-sm text-muted-foreground">{hint}</p>
+                    ) : null}
+                </div>
 
-            {hint && !hasError && (
-                <span id={`${id}-hint`} className="form-hint">
-                    {hint}
-                </span>
-            )}
-
-            {maxLength && (
-                <span className={`char-counter ${value.length > maxLength * 0.9 ? 'char-counter-warning' : ''}`}>
-                    {value.length}/{maxLength}
-                </span>
-            )}
+                {maxLength && (
+                    <CharacterCounter current={value.length} max={maxLength} />
+                )}
+            </div>
         </div>
     );
 });
+
+const ValidationIcon: React.FC<{ hasError: boolean; isValid: boolean; isTextarea: boolean }> =
+    ({ hasError, isValid, isTextarea }) => (
+        <div
+            className={cn(
+                'absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded-full',
+                isTextarea && 'top-3 translate-y-0',
+                hasError && 'bg-destructive text-white',
+                isValid && 'bg-success text-white'
+            )}
+        >
+            {hasError && <X className="w-3 h-3" />}
+            {isValid && <Check className="w-3 h-3" />}
+        </div>
+    );
+
+const ErrorMessage: React.FC<{ id: string; message: string }> = ({ id, message }) => (
+    <div id={`${id}-error`} className="flex items-center gap-1 text-sm text-destructive" role="alert">
+        <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+        <span>{message}</span>
+    </div>
+);
+
+const CharacterCounter: React.FC<{ current: number; max: number }> = ({ current, max }) => (
+    <span
+        className={cn(
+            'text-xs text-muted-foreground flex-shrink-0',
+            current > max * 0.9 && 'text-destructive font-medium'
+        )}
+    >
+        {current}/{max}
+    </span>
+);
 
 FormInput.displayName = 'FormInput';
 
@@ -260,16 +234,6 @@ export const validationRules = {
     match: (getMatchValue: () => string, fieldName: string): ValidationRule => ({
         validate: (value) => value === getMatchValue(),
         message: `${fieldName} не совпадают`
-    }),
-
-    minLength: (min: number): ValidationRule => ({
-        validate: (value) => !value || value.length >= min,
-        message: `Минимум ${min} символов`
-    }),
-
-    maxLength: (max: number): ValidationRule => ({
-        validate: (value) => value.length <= max,
-        message: `Максимум ${max} символов`
     }),
 
     noSpaces: (): ValidationRule => ({

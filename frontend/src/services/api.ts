@@ -76,6 +76,15 @@ api.interceptors.response.use(
             return Promise.reject(error);
         }
 
+        // Don't intercept auth endpoints
+        const isAuthEndpoint = ['/auth/login', '/auth/register'].some(
+            endpoint => originalRequest.url?.endsWith(endpoint)
+        );
+
+        if (isAuthEndpoint) {
+            return Promise.reject(error);
+        }
+
         // If already tried - don't repeat
         if (originalRequest._retry) {
             return Promise.reject(error);

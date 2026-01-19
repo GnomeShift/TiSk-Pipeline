@@ -1,4 +1,8 @@
 import React, { useState, useMemo, useEffect, forwardRef, useImperativeHandle, useCallback, useRef } from 'react';
+import { cn } from '../services/utils';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Eye, EyeOff, Check, X, Circle, AlertCircle } from 'lucide-react';
 
 interface PasswordRequirement {
     id: string;
@@ -26,27 +30,19 @@ interface PasswordInputProps {
     onValidationChange?: (name: string, error: string) => void;
 }
 
-const passwordRequirements: PasswordRequirement[] = [
-    {
-        id: 'minLength',
-        label: 'Минимум 8 символов',
-        validate: (value) => value.length >= 8
-    },
-    {
-        id: 'lowercase',
-        label: 'Строчная буква (a-z)',
-        validate: (value) => /[a-z]/.test(value)
-    },
-    {
-        id: 'uppercase',
-        label: 'Заглавная буква (A-Z)',
-        validate: (value) => /[A-Z]/.test(value)
-    },
-    {
-        id: 'digit',
-        label: 'Цифра (0-9)',
-        validate: (value) => /\d/.test(value)
-    }
+const PASSWORD_REQUIREMENTS: PasswordRequirement[] = [
+    { id: 'minLength', label: 'Минимум 8 символов', validate: (v) => v.length >= 8 },
+    { id: 'lowercase', label: 'Строчная буква (a-z)', validate: (v) => /[a-z]/.test(v) },
+    { id: 'uppercase', label: 'Заглавная буква (A-Z)', validate: (v) => /[A-Z]/.test(v) },
+    { id: 'digit', label: 'Цифра (0-9)', validate: (v) => /\d/.test(v) }
+];
+
+const STRENGTH_CONFIG = [
+    { min: 0, label: '', color: 'bg-destructive', textColor: 'text-destructive' },
+    { min: 1, label: 'Слабый', color: 'bg-destructive', textColor: 'text-destructive' },
+    { min: 2, label: 'Средний', color: 'bg-amber-500', textColor: 'text-amber-500' },
+    { min: 3, label: 'Хороший', color: 'bg-blue-500', textColor: 'text-blue-500' },
+    { min: 4, label: 'Надежный', color: 'bg-success', textColor: 'text-success' }
 ];
 
 const PasswordInput = forwardRef<PasswordInputRef, PasswordInputProps>(({
@@ -66,81 +62,43 @@ const PasswordInput = forwardRef<PasswordInputRef, PasswordInputProps>(({
     const [focused, setFocused] = useState(false);
     const [touched, setTouched] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-
     // Ref for tracking previous forceValidate
     const prevForceValidateRef = useRef(forceValidate);
-
     // Ref for storing callback
     const onValidationChangeRef = useRef(onValidationChange);
+
     useEffect(() => {
         onValidationChangeRef.current = onValidationChange;
     }, [onValidationChange]);
 
-    // Memoize requirements status
-    const requirementsStatus = useMemo(() => {
-        return passwordRequirements.map(req => ({
+    // Memoize requirements
+    const { requirementsStatus, allPassed, passedCount } = useMemo(() => {
+        const status = PASSWORD_REQUIREMENTS.map(req => ({
             ...req,
             passed: req.validate(value)
         }));
+        return {
+            requirementsStatus: status,
+            allPassed: status.every(r => r.passed),
+            passedCount: status.filter(r => r.passed).length
+        };
     }, [value]);
 
-    const allPassed = useMemo(() =>
-            requirementsStatus.every(req => req.passed),
-        [requirementsStatus]
-    );
-
-    const passedCount = useMemo(() =>
-            requirementsStatus.filter(req => req.passed).length,
-        [requirementsStatus]
-    );
-
-    const strengthPercent = useMemo(() =>
-            (passedCount / passwordRequirements.length) * 100,
-        [passedCount]
-    );
-
-    // Memoize strength indicator
-    const strengthInfo = useMemo(() => {
-        let label: string;
-        let color: string;
-
-        if (passedCount === 0) {
-            label = '';
-            color = '#dc3545';
-        } else if (passedCount === 1) {
-            label = 'Слабый';
-            color = '#dc3545';
-        } else if (passedCount === 2) {
-            label = 'Средний';
-            color = '#ffc107';
-        } else if (passedCount === 3) {
-            label = 'Хороший';
-            color = '#17a2b8';
-        } else {
-            label = 'Надежный';
-            color = '#28a745';
-        }
-
-        return { label, color };
-    }, [passedCount]);
+    const strengthPercent = (passedCount / PASSWORD_REQUIREMENTS.length) * 100;
+    const strengthInfo = STRENGTH_CONFIG[passedCount];
 
     // Memoize error getter
     const getError = useCallback((): string => {
-        if (required && !value) {
-            return `${label} обязательно для заполнения`;
-        }
-        if (value && !allPassed) {
-            return 'Пароль не соответствует требованиям';
-        }
+        if (required && !value) return `${label} обязательно для заполнения`;
+        if (value && !allPassed) return 'Пароль не соответствует требованиям';
         return '';
     }, [required, value, label, allPassed]);
 
     // Expose by ref
     useImperativeHandle(ref, () => ({
         validate: () => {
-            const err = getError();
             setTouched(true);
-            return err;
+            return getError();
         },
         getValue: () => value
     }), [getError, value]);
@@ -150,108 +108,95 @@ const PasswordInput = forwardRef<PasswordInputRef, PasswordInputProps>(({
         if (forceValidate > 0 && forceValidate !== prevForceValidateRef.current) {
             prevForceValidateRef.current = forceValidate;
             setTouched(true);
-            const err = getError();
-            onValidationChangeRef.current?.(name, err);
+            onValidationChangeRef.current?.(name, getError());
         }
     }, [forceValidate, getError, name]);
 
     // Refresh validation on value change
     useEffect(() => {
         if (touched) {
-            const err = getError();
-            onValidationChangeRef.current?.(name, err);
+            onValidationChangeRef.current?.(name, getError());
         }
-    }, [value, allPassed, touched, getError, name]);
+    }, [value, touched, getError, name]);
 
     const handleBlur = useCallback(() => {
         setFocused(false);
         setTouched(true);
-        const err = getError();
-        onValidationChangeRef.current?.(name, err);
+        onValidationChangeRef.current?.(name, getError());
     }, [getError, name]);
 
-    const handleFocus = useCallback(() => {
-        setFocused(true);
-    }, []);
-
-    const toggleShowPassword = useCallback(() => {
-        setShowPassword(prev => !prev);
-    }, []);
-
-    // Calculate states
-    const hasError = touched && ((required && !value) || (!!value && !allPassed));
-    const showRequirementsList = showRequirements && (focused || (touched && !allPassed)) && value.length > 0;
-
-    const inputClassName = useMemo(() =>
-            `form-control ${hasError ? 'input-error' : ''} ${focused ? 'input-focused' : ''}`,
-        [hasError, focused]
-    );
+    // Error states
+    const hasEmptyError = touched && required && !value;
+    const hasRequirementsError = touched && !!value && !allPassed;
+    const hasError = hasEmptyError || hasRequirementsError;
+    const isValid = touched && value && allPassed;
+    const showRequirementsList = showRequirements && (focused || hasRequirementsError) && value.length > 0;
 
     return (
-        <div className={`form-group ${hasError ? 'has-error' : ''}`}>
-            <label htmlFor={id}>
+        <div className="space-y-1">
+            <Label htmlFor={id} state={hasError ? 'error' : 'default'} className="flex items-center gap-1">
                 {label}
-                {required && <span className="required-mark">*</span>}
-            </label>
+                {required && <span className="text-destructive font-bold">*</span>}
+            </Label>
 
-            <div className="input-wrapper password-input-wrapper">
-                <input
+            <div className="relative">
+                <Input
                     id={id}
                     name={name}
                     type={showPassword ? 'text' : 'password'}
                     value={value}
                     onChange={onChange}
                     onBlur={handleBlur}
-                    onFocus={handleFocus}
+                    onFocus={() => setFocused(true)}
                     placeholder={placeholder}
                     disabled={disabled}
                     autoComplete={autoComplete}
-                    className={inputClassName}
+                    state={hasError ? 'error' : isValid ? 'success' : 'default'}
+                    className="pr-20"
                 />
 
+                {/* Hide password button */}
                 <button
                     type="button"
-                    className="password-toggle"
-                    onClick={toggleShowPassword}
+                    onClick={() => setShowPassword(p => !p)}
                     tabIndex={-1}
-                    aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
                     disabled={disabled}
+                    className="absolute right-10 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors"
                 >
-                    {showPassword ? '🙈' : '👁️'}
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
 
-                {touched && !focused && value && (
-                    <span className={`input-icon ${hasError ? 'input-icon-error' : 'input-icon-success'}`}>
-                        {hasError ? '✕' : '✓'}
-                    </span>
+                {touched && !focused && (hasError || isValid) && (
+                    <div className={cn(
+                        'absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded-full',
+                        hasError ? 'bg-destructive text-white' : 'bg-success text-white'
+                    )}>
+                        {hasError ? <X className="w-3 h-3" /> : <Check className="w-3 h-3" />}
+                    </div>
                 )}
             </div>
 
             {/* Error message for empty required field */}
-            {touched && required && !value && (
-                <span className="error-message" role="alert">
-                    <span className="error-icon">⚠</span>
-                    {label} обязательно для заполнения
-                </span>
-            )}
+            <div className="min-h-[1.25rem]">
+                {hasEmptyError && (
+                    <div className="flex items-center gap-1 text-sm text-destructive">
+                        <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span>{label} обязательно для заполнения</span>
+                    </div>
+                )}
+            </div>
 
             {/* Password strength indicator */}
             {value.length > 0 && (
-                <div className="password-strength">
-                    <div className="password-strength-bar">
+                <div className="flex items-center gap-3">
+                    <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
                         <div
-                            className="password-strength-fill"
-                            style={{
-                                width: `${strengthPercent}%`,
-                                backgroundColor: strengthInfo.color
-                            }}
+                            className={cn('h-full rounded-full transition-all duration-300', strengthInfo.color)}
+                            style={{ width: `${strengthPercent}%` }}
                         />
                     </div>
                     {strengthInfo.label && (
-                        <span
-                            className="password-strength-label"
-                            style={{ color: strengthInfo.color }}
-                        >
+                        <span className={cn('text-xs font-semibold min-w-[60px] text-right', strengthInfo.textColor)}>
                             {strengthInfo.label}
                         </span>
                     )}
@@ -260,16 +205,19 @@ const PasswordInput = forwardRef<PasswordInputRef, PasswordInputProps>(({
 
             {/* Password requirements */}
             {showRequirementsList && (
-                <div className="password-requirements">
+                <div className="p-3 bg-muted/50 rounded-lg space-y-1">
                     {requirementsStatus.map(req => (
                         <div
                             key={req.id}
-                            className={`requirement ${req.passed ? 'requirement-passed' : 'requirement-failed'}`}
+                            className={cn(
+                                'flex items-center gap-2 text-sm transition-colors',
+                                req.passed ? 'text-success' : 'text-muted-foreground'
+                            )}
                         >
-                            <span className="requirement-icon">
-                                {req.passed ? '✓' : '○'}
-                            </span>
-                            <span className="requirement-label">{req.label}</span>
+                            <div className="w-4 h-4 flex items-center justify-center">
+                                {req.passed ? <Check className="w-3.5 h-3.5" /> : <Circle className="w-2.5 h-2.5" />}
+                            </div>
+                            <span>{req.label}</span>
                         </div>
                     ))}
                 </div>
