@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.2](https://github.com/GnomeShift/TiSk-Pipeline/compare/1.15.1...1.15.2) (2026-01-19)
+
+
+### ♻️ Refactoring
+
+* ui rework ([c3bdcd1](https://github.com/GnomeShift/TiSk-Pipeline/commit/c3bdcd1989825a966fd4010641f0afb8f6beb0cd))
+
 ## [1.15.1](https://github.com/GnomeShift/TiSk-Pipeline/compare/1.15.0...1.15.1) (2026-01-11)
 
 
