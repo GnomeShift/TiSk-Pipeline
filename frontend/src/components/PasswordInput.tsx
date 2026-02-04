@@ -67,9 +67,7 @@ const PasswordInput = forwardRef<PasswordInputRef, PasswordInputProps>(({
     // Ref for storing callback
     const onValidationChangeRef = useRef(onValidationChange);
 
-    useEffect(() => {
-        onValidationChangeRef.current = onValidationChange;
-    }, [onValidationChange]);
+    useEffect(() => { onValidationChangeRef.current = onValidationChange; }, [onValidationChange]);
 
     // Memoize requirements
     const { requirementsStatus, allPassed, passedCount } = useMemo(() => {

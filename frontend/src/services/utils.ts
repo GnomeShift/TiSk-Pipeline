@@ -124,3 +124,17 @@ export function getUserInitials(firstName?: string, lastName?: string): string {
     const last = lastName?.charAt(0) || '';
     return (first + last).toUpperCase();
 }
+
+export const stripHtml = (html: string): string => {
+    if (!html) return '';
+
+    const withSpaces = html
+        .replace(/<br\s*\/?>/gi, ' ')
+        .replace(/<\/(p|div|li|tr|h[1-6]|blockquote|pre)>/gi, ' ');
+
+    const tmp = document.createElement('DIV');
+    tmp.innerHTML = withSpaces;
+
+    const text = tmp.textContent || tmp.innerText || '';
+    return text.replace(/\s+/g, ' ').trim();
+};

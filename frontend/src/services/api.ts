@@ -1,5 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { env } from './env';
+import { getErrorMessage } from './errorTranslator';
+import { toast } from './toast'
 
 const getApiUrl = () => {
     return env.apiUrl;
@@ -64,6 +66,7 @@ api.interceptors.request.use(
 // Response interceptor
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
     _retry?: boolean;
+    _skipGlobalError?: boolean;
 }
 
 api.interceptors.response.use(
@@ -71,9 +74,13 @@ api.interceptors.response.use(
     async (error: AxiosError) => {
         const originalRequest = error.config as CustomAxiosRequestConfig;
 
-        // Don't touch non-401 errors
-        if (!originalRequest || error.response?.status !== 401) {
-            return Promise.reject(error);
+        // Global error handler
+        if (!originalRequest?._skipGlobalError) {
+            if (!error.response || error.response.status >= 500) {
+                const message = getErrorMessage(error);
+                toast.error(message);
+                return Promise.reject(error);
+            }
         }
 
         // Don't intercept auth endpoints

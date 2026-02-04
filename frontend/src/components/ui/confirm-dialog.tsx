@@ -9,7 +9,7 @@ type ConfirmVariant = 'danger' | 'warning' | 'info' | 'default';
 
 interface ConfirmOptions {
     title?: string;
-    description?: string;
+    description?: ReactNode | string;
     confirmText?: string;
     cancelText?: string;
     variant?: ConfirmVariant;
@@ -132,7 +132,17 @@ export const useDeleteConfirm = () => {
     return useCallback((itemName: string) => {
         return confirm({
             title: 'Удалить?',
-            description: `Вы уверены, что хотите удалить ${itemName}? Это действие нельзя отменить.`,
+            description: (
+                <div className="text-sm text-muted-foreground">
+                    <span>Вы уверены, что хотите удалить </span>
+                    <span className="wrap-break-word">{itemName}</span>
+                    ?
+                    <span className="font-medium text-foreground">
+                        <br/>
+                        Это действие нельзя отменить!
+                    </span>
+                </div>
+            ),
             confirmText: 'Удалить',
             cancelText: 'Отмена',
             variant: 'danger',

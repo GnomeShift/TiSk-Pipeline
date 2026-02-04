@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { SkeletonStatistics } from './ui/skeleton';
 import { CheckCircle2, Clock, FileText, RefreshCw, TrendingUp, Users, Activity, AlertCircle, Trophy, Medal } from 'lucide-react';
+import { getErrorMessage } from '../services/errorTranslator';
 
 type TabType = 'overview' | 'assignees' | 'trends';
 
@@ -98,16 +99,13 @@ const Statistics: React.FC = () => {
                 setAssigneesStats(await statisticsService.getAllAssigneesStatistics());
             }
         } catch (err) {
-            console.error(err);
-            toast.error('Ошибка загрузки статистики');
+            toast.error(getErrorMessage(err));
         } finally {
             setLoading(false);
         }
     }, [selectedPeriod, user?.role]);
 
-    useEffect(() => {
-        loadStatistics();
-    }, [loadStatistics]);
+    useEffect(() => { loadStatistics(); }, [loadStatistics]);
 
     const statusData = useMemo(() => {
         if (!allStats) return [];
@@ -123,8 +121,8 @@ const Statistics: React.FC = () => {
         return periodStats.dailyStatistics.map(d => ({
             date: formatDate(d.date, { day: 'numeric', month: 'short' }),
             fullDate: formatDate(d.date),
-            "Создано": d.created,
-            "Закрыто": d.closed
+            'Создано': d.created,
+            'Закрыто': d.closed
         }));
     }, [periodStats]);
 
@@ -173,7 +171,7 @@ const Statistics: React.FC = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 p-1 bg-muted/50 rounded-xs">
                         {[
                             { id: 'overview', icon: FileText, label: 'Обзор' },
-                            { id: 'assignees', icon: Users, label: 'Команда' },
+                            { id: 'assignees', icon: Users, label: 'Сотрудники' },
                             { id: 'trends', icon: TrendingUp, label: 'Динамика' }
                         ].map(tab => (
                             <button

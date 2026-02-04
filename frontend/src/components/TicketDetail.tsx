@@ -17,6 +17,8 @@ import { TicketStatusSelect } from './ui/entity-select';
 import { useDeleteConfirm } from './ui/confirm-dialog';
 import { usePermissions } from '../hooks/usePermissions';
 import { ArrowLeft, ArrowRight, Building2, Edit, Loader2, Target, Trash2, UserPlus } from 'lucide-react';
+import { getErrorMessage } from '../services/errorTranslator';
+import { RichTextViewer } from './ui/rich-text-viewer';
 
 const TicketDetail: React.FC = () => {
     const { id } = useParams();
@@ -32,8 +34,8 @@ const TicketDetail: React.FC = () => {
 
     useEffect(() => {
         if (id) {
-            ticketService.getById(id).then(setTicket).catch(() => {
-                toast.error('Тикет не найден');
+            ticketService.getById(id).then(setTicket).catch((err) => {
+                toast.error(getErrorMessage(err));
                 navigate('/'); }).finally(() => setLoading(false));
             if (user?.role === UserRole.ADMIN || user?.role === UserRole.SUPPORT) {
                 userService.getAll().then(data =>
@@ -100,7 +102,7 @@ const TicketDetail: React.FC = () => {
                         }
                         {permissions.canDeleteTicket(ticket) &&
                             <Button variant="destructive" onClick={handleDelete}>
-                                <Trash2 className="w-4 h-4 mr-2" />
+                                <Trash2 className="w-4 h-4" />
                                 Удалить
                             </Button>
                         }
@@ -115,8 +117,10 @@ const TicketDetail: React.FC = () => {
                             <CardTitle className="text-2xl break-words">{ticket.title}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <h4 className="text-sm font-medium text-muted-foreground">Описание</h4>
-                            <p className="whitespace-pre-wrap break-words">{ticket.description}</p>
+                            <h4 className="font-medium">Описание</h4>
+                            <div className="rounded-md border p-2.5">
+                                <RichTextViewer content={ticket.description} />
+                            </div>
                         </CardContent>
                     </Card>
                 </div>
@@ -209,7 +213,8 @@ const TicketDetail: React.FC = () => {
                                     disabled={assigningId === u.id}
                                     className={cn(
                                         'w-full flex items-center justify-between p-4 rounded-lg border-2 text-left transition-all',
-                                        isCurrent ? 'bg-green-50 border-green-500' : 'bg-muted/50 border-transparent hover:border-primary'
+                                        isCurrent ? 'bg-green-50 border-green-500 dark:bg-green-900/20'
+                                            : 'bg-muted/50 border-transparent hover:border-primary'
                                     )}
                                 >
                                     <div className="flex items-center gap-3 min-w-0 flex-1">

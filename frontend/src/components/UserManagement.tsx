@@ -17,6 +17,7 @@ import { useBlockConfirm, useDeleteConfirm } from './ui/confirm-dialog';
 import { SkeletonUserManagement } from './ui/skeleton';
 import { UserRoleSelect, UserStatusSelect } from './ui/entity-select';
 import { ArrowUpDown, Edit, Lock, RotateCcw, Search, Trash2, Unlock, UserPlus, Users } from 'lucide-react';
+import { getErrorMessage } from '../services/errorTranslator';
 
 const UserFormModal: React.FC<{
     user: UserDTO | null;
@@ -209,21 +210,19 @@ const UserManagement: React.FC = () => {
     const [users, setUsers] = useState<UserDTO[]>([]);
     const [loading, setLoading] = useState(true);
     const [modalState, setModalState] = useState<{ isOpen: boolean; user: UserDTO | null }>({ isOpen: false, user: null });
-
     // Filters and pagination
     const [filters, setFilters] = useState({ search: '', role: 'ALL', status: 'ALL', sortBy: 'createdAt', sortOrder: 'desc' as 'asc'|'desc' });
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
-    useEffect(() => { loadUsers() }, []);
-    useEffect(() => { setCurrentPage(1) }, [filters]);
+    useEffect(() => { loadUsers(); setCurrentPage(1) }, []);
 
     const loadUsers = async () => {
         try {
             setLoading(true);
             setUsers(await userService.getAll());
-        } catch {
-            toast.error('Ошибка загрузки пользователей');
+        } catch (err) {
+            toast.error(getErrorMessage(err));
         } finally {
             setLoading(false);
         }
@@ -274,6 +273,28 @@ const UserManagement: React.FC = () => {
     }, [users, filters]);
 
     const paginated = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+    const columns = [
+        { label: 'Имя', key: 'firstName' },
+        { label: 'Email', key: 'email' },
+        { label: 'Логин', key: 'login' },
+        { label: 'Роль', key: 'role' },
+        { label: 'Статус', key: 'status' },
+        { label: 'Телефон', key: 'phoneNumber' },
+        { label: 'Отдел', key: 'department' },
+        { label: 'Дата', key: 'createdAt' },
+        { label: 'Действия', key: null }
+    ];
+
+    const handleSort = (key: string | null) => {
+        if (!key) return;
+
+        setFilters(prev => ({
+            ...prev,
+            sortBy: key,
+            sortOrder: prev.sortBy === key && prev.sortOrder === 'asc' ? 'desc' : 'asc'
+        }));
+    };
 
     if (loading) return <SkeletonUserManagement />;
 
@@ -332,11 +353,23 @@ const UserManagement: React.FC = () => {
                         <table className="w-full min-w-[1000px]">
                             <thead>
                             <tr className="border-b bg-muted/50">
-                                {['Имя ', 'Email ', 'Логин ', 'Роль ', 'Статус ', 'Телефон ', 'Отдел ', 'Дата ', 'Действия ']
-                                    .map((h, i) => (
-                                    <th key={i} className="px-4 py-3 text-left text-sm font-semibold">
-                                        {h}
-                                        <ArrowUpDown className="inline h-3 w-3" />
+                                {columns.map((col, i) => (
+                                    <th
+                                        key={i}
+                                        className={`px-4 py-3 text-left text-sm font-semibold ${col.key ? 'cursor-pointer select-none hover:bg-muted/80' : ''}`}
+                                        onClick={() => handleSort(col.key)}
+                                    >
+                                        <div className="flex items-center gap-1">
+                                            {col.label}
+                                            {col.key && (
+                                                <ArrowUpDown
+                                                    className={`h-3 w-3 transition-colors ${
+                                                        filters.sortBy === col.key ? 'text-primary' : 'text-muted-foreground'
+                                                    }`
+                                                }
+                                                />
+                                            )}
+                                        </div>
                                     </th>
                                 ))}
                             </tr>

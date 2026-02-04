@@ -175,3 +175,206 @@
         display: none !important;
     }
 }
+
+/* Table */
+.ProseMirror table {
+    border-collapse: collapse;
+    table-layout: fixed;
+    width: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+
+.ProseMirror td,
+.ProseMirror th {
+    min-width: 1em;
+    border: 1px solid hsl(var(--border));
+    padding: 3px 5px;
+    vertical-align: top;
+    box-sizing: border-box;
+    position: relative;
+}
+
+.ProseMirror th {
+    font-weight: bold;
+    text-align: left;
+    background-color: hsl(var(--muted));
+}
+
+.ProseMirror .selectedCell:after {
+    z-index: 2;
+    position: absolute;
+    content: "";
+    left: 0; right: 0; top: 0; bottom: 0;
+    background: rgba(200, 200, 255, 0.4);
+    pointer-events: none;
+}
+
+.ProseMirror .column-resize-handle {
+    position: absolute;
+    right: -2px;
+    top: 0;
+    bottom: -2px;
+    width: 4px;
+    background-color: #adf;
+    pointer-events: none;
+}
+
+/* Code block */
+.ProseMirror pre,
+.prose pre {
+    @apply bg-slate-100 dark:bg-[#0d0d0d] text-slate-900 dark:text-slate-100;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid transparent;
+    @apply border-border;
+    overflow-x: auto;
+}
+
+/* Light mode syntax colors */
+.ProseMirror pre .hljs-comment,
+.ProseMirror pre .hljs-quote,
+.prose pre .hljs-comment,
+.prose pre .hljs-quote {
+    @apply text-slate-500 italic;
+}
+
+.ProseMirror pre .hljs-variable,
+.ProseMirror pre .hljs-template-variable,
+.ProseMirror pre .hljs-attribute,
+.ProseMirror pre .hljs-tag,
+.ProseMirror pre .hljs-name,
+.ProseMirror pre .hljs-regexp,
+.ProseMirror pre .hljs-link,
+.ProseMirror pre .hljs-selector-id,
+.ProseMirror pre .hljs-selector-class,
+.prose pre .hljs-variable,
+.prose pre .hljs-template-variable,
+.prose pre .hljs-attribute,
+.prose pre .hljs-tag,
+.prose pre .hljs-name,
+.prose pre .hljs-regexp,
+.prose pre .hljs-link,
+.prose pre .hljs-selector-id,
+.prose pre .hljs-selector-class {
+    @apply text-red-600;
+}
+
+.ProseMirror pre .hljs-number,
+.ProseMirror pre .hljs-meta,
+.ProseMirror pre .hljs-built_in,
+.ProseMirror pre .hljs-builtin-name,
+.ProseMirror pre .hljs-literal,
+.ProseMirror pre .hljs-type,
+.ProseMirror pre .hljs-params,
+.prose pre .hljs-number,
+.prose pre .hljs-meta,
+.prose pre .hljs-built_in,
+.prose pre .hljs-builtin-name,
+.prose pre .hljs-literal,
+.prose pre .hljs-type,
+.prose pre .hljs-params {
+    @apply text-amber-600;
+}
+
+.ProseMirror pre .hljs-string,
+.ProseMirror pre .hljs-symbol,
+.ProseMirror pre .hljs-bullet,
+.prose pre .hljs-string,
+.prose pre .hljs-symbol,
+.prose pre .hljs-bullet {
+    @apply text-green-600;
+}
+
+.ProseMirror pre .hljs-title,
+.ProseMirror pre .hljs-section,
+.prose pre .hljs-title,
+.prose pre .hljs-section {
+    @apply text-blue-600 font-bold;
+}
+
+.ProseMirror pre .hljs-keyword,
+.ProseMirror pre .hljs-selector-tag,
+.prose pre .hljs-keyword,
+.prose pre .hljs-selector-tag {
+    @apply text-purple-600 font-bold;
+}
+
+/* Dark mode syntax colors */
+.dark .ProseMirror pre .hljs-comment,
+.dark .ProseMirror pre .hljs-quote,
+.dark .prose pre .hljs-comment,
+.dark .prose pre .hljs-quote {
+    @apply text-slate-400;
+}
+
+.dark .ProseMirror pre .hljs-variable,
+.dark .ProseMirror pre .hljs-template-variable,
+.dark .ProseMirror pre .hljs-tag,
+.dark .ProseMirror pre .hljs-name,
+.dark .ProseMirror pre .hljs-selector-id,
+.dark .ProseMirror pre .hljs-selector-class,
+.dark .prose pre .hljs-variable,
+.dark .prose pre .hljs-template-variable,
+.dark .prose pre .hljs-tag,
+.dark .prose pre .hljs-name,
+.dark .prose pre .hljs-selector-id,
+.dark .prose pre .hljs-selector-class {
+    @apply text-red-400;
+}
+
+.dark .ProseMirror pre .hljs-number,
+.dark .ProseMirror pre .hljs-meta,
+.dark .ProseMirror pre .hljs-built_in,
+.dark .ProseMirror pre .hljs-builtin-name,
+.dark .ProseMirror pre .hljs-literal,
+.dark .ProseMirror pre .hljs-type,
+.dark .ProseMirror pre .hljs-params,
+.dark .prose pre .hljs-number,
+.dark .prose pre .hljs-meta,
+.dark .prose pre .hljs-built_in,
+.dark .prose pre .hljs-builtin-name,
+.dark .prose pre .hljs-literal,
+.dark .prose pre .hljs-type,
+.dark .prose pre .hljs-params {
+    @apply text-orange-400;
+}
+
+.dark .ProseMirror pre .hljs-string,
+.dark .ProseMirror pre .hljs-symbol,
+.dark .ProseMirror pre .hljs-bullet,
+.dark .prose pre .hljs-string,
+.dark .prose pre .hljs-symbol,
+.dark .prose pre .hljs-bullet {
+    @apply text-green-400;
+}
+
+.dark .ProseMirror pre .hljs-title,
+.dark .ProseMirror pre .hljs-section,
+.dark .prose pre .hljs-title,
+.dark .prose pre .hljs-section {
+    @apply text-blue-400;
+}
+
+.dark .ProseMirror pre .hljs-keyword,
+.dark .ProseMirror pre .hljs-selector-tag,
+.dark .prose pre .hljs-keyword,
+.dark .prose pre .hljs-selector-tag {
+    @apply text-purple-400;
+}
+
+.ProseMirror pre code,
+.prose pre code {
+    color: inherit;
+    padding: 0;
+    background: none;
+    font-size: 0.8rem;
+}
+
+/* Scrollbar */
+.ProseMirror {
+    min-height: 150px;
+    max-height: 600px;
+    overflow-y: auto;
+}

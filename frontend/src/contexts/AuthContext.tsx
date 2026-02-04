@@ -72,8 +72,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                             isLoading: false
                         });
                     }
-                } catch (error) {
-                    console.error('Auth check failed:', error);
+                } catch {
                     if (isMounted) {
                         logout();
                     }

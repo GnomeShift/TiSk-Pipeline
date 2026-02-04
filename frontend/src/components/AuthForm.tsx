@@ -8,6 +8,7 @@ import PasswordInput from './PasswordInput';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { UserPlus } from 'lucide-react';
+import { getErrorMessage } from '../services/errorTranslator';
 
 type AuthMode = 'login' | 'register';
 
@@ -70,11 +71,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode }) => {
                 await login({ email: formData.email, password: formData.password });
             }
             navigate('/');
-        } catch (err: any) {
-            const message = !isRegister && err.response?.status === 401
-                ? 'Неверный email или пароль'
-                : isRegister ? 'Ошибка регистрации' : 'Ошибка входа';
-            toast.error(message);
+        } catch (err) {
+            toast.error(getErrorMessage(err));
         } finally {
             setLoading(false);
         }

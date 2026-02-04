@@ -11,6 +11,7 @@ import { Badge } from './ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { SkeletonProfile } from './ui/skeleton';
 import { Edit, Key, Save, User, X } from 'lucide-react';
+import { getErrorMessage } from '../services/errorTranslator';
 
 const Profile: React.FC = () => {
     const { user, updateUser, changePassword } = useAuth();
@@ -43,8 +44,8 @@ const Profile: React.FC = () => {
             updateUser(await userService.update(user.id, formData));
             setIsEditing(false);
             toast.success('Профиль обновлен');
-        } catch {
-            toast.error('Ошибка обновления профиля');
+        } catch (err) {
+            toast.error(getErrorMessage(err));
         } finally {
             setLoading(false);
         }
@@ -61,8 +62,8 @@ const Profile: React.FC = () => {
             setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
             passwordValidation.resetValidation();
             toast.success('Пароль изменен');
-        } catch {
-            toast.error('Ошибка изменения пароля');
+        } catch (err) {
+            toast.error(getErrorMessage(err));
         } finally {
             setLoading(false);
         }
@@ -168,8 +169,7 @@ const Profile: React.FC = () => {
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={handlePasswordSubmit}
-                          className="max-w-sm space-y-4">
+                    <form onSubmit={handlePasswordSubmit} className="max-w-sm space-y-4">
                         <FormInput
                             type="password"
                             id="currentPassword"

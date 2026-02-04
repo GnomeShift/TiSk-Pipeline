@@ -8,11 +8,11 @@ import { Avatar, AvatarFallback } from './ui/avatar';
 import { ThemeToggle } from './ui/theme-toggle';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem,
     DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { BarChart3, LogOut, Menu, Plus, Settings, Ticket, User, X } from 'lucide-react';
+import { BarChart3, LogOut, Menu, Plus, Settings, NotebookText, User, X } from 'lucide-react';
 
 const NAV_CONFIG = [
     { path: '/statistics', label: 'Статистика', icon: BarChart3, roles: ['ADMIN'], loc: ['nav', 'mobile'] },
-    { path: '/', label: 'Тикеты', short: 'Главная', icon: Ticket, loc: ['nav', 'bottom', 'mobile'] },
+    { path: '/', label: 'Тикеты', short: 'Главная', icon: NotebookText, loc: ['nav', 'bottom', 'mobile'] },
     { path: '/create', label: 'Создать тикет', short: 'Создать', icon: Plus, primary: true, loc: ['nav', 'bottom', 'mobile'] },
     { path: '/profile', label: 'Профиль', icon: User, loc: ['menu', 'bottom', 'mobile'] },
     { path: '/users', label: 'Управление пользователями', icon: Settings, roles: ['ADMIN'], loc: ['menu', 'mobile'] },
@@ -46,9 +46,7 @@ const Layout: React.FC = () => {
     const [mobileOpen, setMobileOpen] = useState(false);
     const handleLogout = () => { logout(); navigate('/login'); setMobileOpen(false); };
     const getItems = (loc: string) =>
-        NAV_CONFIG.filter(i =>
-            i.loc.includes(loc) && (!i.roles || i.roles.includes(user?.role || ''))
-        );
+        NAV_CONFIG.filter(i => i.loc.includes(loc) && (!i.roles || i.roles.includes(user?.role || '')));
     const isActive = (path: string) => location.pathname === path;
 
     return (
@@ -56,10 +54,7 @@ const Layout: React.FC = () => {
             {/* Header */}
             <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                 <div className="container flex h-16 items-center justify-between">
-                    <Link
-                        to="/"
-                        className="text-xl font-bold text-foreground hover:text-primary transition-colors"
-                    >
+                    <Link to="/" className="text-xl font-bold text-foreground hover:text-primary transition-colors">
                         {env.appTitle}
                     </Link>
 
@@ -119,14 +114,10 @@ const Layout: React.FC = () => {
                         ) : (
                             <>
                                 <ThemeToggle />
-                                <Link
-                                    to="/login"
-                                    className="px-4 py-2 text-sm font-medium hover:bg-accent rounded-md">
+                                <Link to="/login" className="px-4 py-2 text-sm font-medium hover:bg-accent rounded-md">
                                     Вход
                                 </Link>
-                                <Link
-                                    to="/register"
-                                    className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
+                                <Link to="/register" className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
                                     Регистрация
                                 </Link>
                             </>
@@ -208,9 +199,7 @@ const Layout: React.FC = () => {
                                 )}
                             >
                                 <item.icon className="h-5 w-5" />
-                                <span className="text-xs">
-                                    {item.short || item.label}
-                                </span>
+                                <span className="text-xs">{item.short || item.label}</span>
                             </Link>
                         ))}
                     </div>

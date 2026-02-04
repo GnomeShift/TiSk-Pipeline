@@ -66,16 +66,10 @@ const FormInput = forwardRef<FormInputRef, FormInputProps>(({
     const isTextarea = type === 'textarea';
 
     const customValidate = useCallback((val: string): string => {
-        if (minLength && val.length > 0 && val.length < minLength) {
-            return `Минимум ${minLength} символов`;
-        }
-        if (maxLength && val.length > maxLength) {
-            return `Максимум ${maxLength} символов`;
-        }
+        if (minLength && val.length > 0 && val.length < minLength) return `Минимум ${minLength} символов`;
+        if (maxLength && val.length > maxLength) return `Максимум ${maxLength} символов`;
         for (const rule of rules) {
-            if (!rule.validate(val)) {
-                return rule.message;
-            }
+            if (!rule.validate(val)) return rule.message;
         }
         return '';
     }, [minLength, maxLength, rules]);
@@ -188,17 +182,18 @@ const ValidationIcon: React.FC<{ hasError: boolean; isValid: boolean; isTextarea
     );
 
 const ErrorMessage: React.FC<{ id: string; message: string }> = ({ id, message }) => (
-    <div id={`${id}-error`} className="flex items-center gap-1 text-sm text-destructive" role="alert">
+    <div id={`${id}-error`} className="flex items-center gap-1 text-sm text-destructive font-medium animate-in slide-in-from-top-1 fade-in-0" role="alert">
         <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
         <span>{message}</span>
     </div>
 );
 
-const CharacterCounter: React.FC<{ current: number; max: number }> = ({ current, max }) => (
+export const CharacterCounter: React.FC<{ current: number; max: number }> = ({ current, max }) => (
     <span
         className={cn(
-            'text-xs text-muted-foreground flex-shrink-0',
-            current > max * 0.9 && 'text-destructive font-medium'
+            'text-xs text-muted-foreground flex-shrink-0 font-mono select-none',
+            current > max * 0.9 && 'text-warning font-medium',
+            current >= max && 'text-destructive font-bold'
         )}
     >
         {current}/{max}
