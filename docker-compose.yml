@@ -8,23 +8,22 @@ services:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-    ports:
-      - "5432:5432"
     volumes:
       - tisk-db-data:/var/lib/postgresql/data
     networks:
       - tisk-network
     healthcheck:
       test: [ 'CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}' ]
-      interval: 3s
+      interval: 5s
       timeout: 10s
-      retries: 3
+      retries: 5
+      start_period: 10s
     restart: unless-stopped
     logging:
-      driver: 'json-file'
+      driver: json-file
       options:
-        max-size: '50m'
-        max-file: '10'
+        max-size: 50m
+        max-file: 5
 
   tisk-backend:
     image: tisk-backend:latest
@@ -33,12 +32,21 @@ services:
       - .env.production
     networks:
       - tisk-network
-    ports:
-      - "8080:8080"
     depends_on:
       tisk-db:
         condition: service_healthy
+    healthcheck:
+      test: "wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 50m
+        max-file: 5
 
   tisk-frontend:
     image: tisk-frontend:latest
@@ -49,19 +57,28 @@ services:
       - tisk-network
     depends_on:
       tisk-backend:
-        condition: service_started
+        condition: service_healthy
       tisk-db:
         condition: service_healthy
+    healthcheck:
+      test: "wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1"
+      interval: 30s
+      timeout: 5s
+      retries: 3
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 5
 
   tisk-caddy:
-    image: caddy:latest
+    image: caddy:alpine
     container_name: "tisk-caddy"
-    hostname: tisk-caddy
     restart: unless-stopped
     ports:
-      - "0.0.0.0:443:443"
-      - "0.0.0.0:80:80"
+      - "443:443"
+      - "80:80"
     networks:
       - tisk-network
     volumes:
