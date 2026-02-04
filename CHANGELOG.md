@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.16.0](https://github.com/GnomeShift/TiSk-Pipeline/compare/1.15.2...1.16.0) (2026-02-04)
+
+
+### 🚀 Features
+
+* update front and back ([029613a](https://github.com/GnomeShift/TiSk-Pipeline/commit/029613a67a3bdf0d4853cc5b46c70c833d21296e))
+
+
+### 📦 Build
+
+* update build files ([7e2b0bb](https://github.com/GnomeShift/TiSk-Pipeline/commit/7e2b0bb6968b559bd69282356dd06a0cf29d8c29))
+
 ## [1.15.2](https://github.com/GnomeShift/TiSk-Pipeline/compare/1.15.1...1.15.2) (2026-01-19)
 
 
