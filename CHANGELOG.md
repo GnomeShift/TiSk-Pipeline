@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.16.1](https://github.com/GnomeShift/TiSk-Pipeline/compare/1.16.0...1.16.1) (2026-02-24)
+
+
+### 📦 Build
+
+* **deps:** bump `aquasecurity/trivy-action` from `0.33.1` to `0.34.0` ([#21](https://github.com/GnomeShift/TiSk-Pipeline/issues/21)) ([294e70e](https://github.com/GnomeShift/TiSk-Pipeline/commit/294e70e7b338f9c47371caee3a5ea3362c5f71cf))
+* **deps:** bump `markdown-it` from `14.1.0` to `14.1.1` ([#22](https://github.com/GnomeShift/TiSk-Pipeline/issues/22)) ([b4ec3d2](https://github.com/GnomeShift/TiSk-Pipeline/commit/b4ec3d2b648df9c1d098e1e5a934a0df4272968a))
+* **deps:** bump aquasecurity/trivy-action ([c22c510](https://github.com/GnomeShift/TiSk-Pipeline/commit/c22c51090c8564bc014b438cd0dca0f22b81560f))
+* **deps:** bump axios ([4c81bdb](https://github.com/GnomeShift/TiSk-Pipeline/commit/4c81bdb24692df930c242c1d93ebb466c71b93ce))
+* **deps:** bump axios from `1.13.2` to `1.13.5` ([#20](https://github.com/GnomeShift/TiSk-Pipeline/issues/20)) ([de2a755](https://github.com/GnomeShift/TiSk-Pipeline/commit/de2a755ab2bdc497a71c4ad08635529a72e1cae5))
+* **deps:** bump markdown-it ([1e594c0](https://github.com/GnomeShift/TiSk-Pipeline/commit/1e594c0500242936c693dc0c853221d4a17aa1fc))
+
 ## [1.16.0](https://github.com/GnomeShift/TiSk-Pipeline/compare/1.15.2...1.16.0) (2026-02-04)
 
 
